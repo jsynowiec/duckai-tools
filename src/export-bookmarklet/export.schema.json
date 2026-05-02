@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "IndexedDB Export Schema",
+  "description": "Schema for exported IndexedDB database data",
+  "required": ["databaseName", "version", "stores"],
+  "properties": {
+    "databaseName": {
+      "type": "string",
+      "description": "Name of the IndexedDB database"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Version number of the database"
+    },
+    "stores": {
+      "type": "object",
+      "description": "Collection of object stores in the database",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["keyPath", "autoIncrement", "indexes", "data"],
+        "properties": {
+          "keyPath": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" } },
+              { "type": "null" }
+            ],
+            "description": "Key path for the object store"
+          },
+          "autoIncrement": {
+            "type": "boolean",
+            "description": "Whether the object store uses auto-incrementing keys"
+          },
+          "indexes": {
+            "type": "array",
+            "description": "Array of index definitions for the object store",
+            "items": {
+              "type": "object",
+              "required": ["name", "keyPath", "unique", "multiEntry"],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Name of the index"
+                },
+                "keyPath": {
+                  "oneOf": [
+                    { "type": "string" },
+                    { "type": "array", "items": { "type": "string" } }
+                  ],
+                  "description": "Key path for the index"
+                },
+                "unique": {
+                  "type": "boolean",
+                  "description": "Whether the index enforces uniqueness"
+                },
+                "multiEntry": {
+                  "type": "boolean",
+                  "description": "Whether the index is multi-entry"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "data": {
+            "type": "array",
+            "description": "Array of all records in the object store",
+            "items": {
+              "$ref": "./export.schema.json",
+              "description": "Individual record from the object store"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

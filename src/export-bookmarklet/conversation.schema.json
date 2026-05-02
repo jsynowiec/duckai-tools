@@ -1,0 +1,278 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "DISCLAIMER: This schema is reverse-engineered from data samples and represents a best-effort inference of the structure. It is not an official specification.",
+  "type": "object",
+  "title": "Chat Record Schema",
+  "description": "Schema for a chat conversation record",
+  "required": [
+    "title",
+    "model",
+    "messages",
+    "chatId",
+    "lastEdit",
+    "lastEditType",
+    "pinned",
+    "pendingSync"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Title of the chat conversation"
+    },
+    "model": {
+      "type": "string",
+      "description": "AI model identifier used for the chat"
+    },
+    "messages": {
+      "type": "array",
+      "description": "Array of messages in the conversation",
+      "items": {
+        "type": "object",
+        "required": ["role", "createdAt"],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": ["user", "assistant"],
+            "description": "Role of the message sender"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp of message creation"
+          },
+          "content": {
+            "type": "string",
+            "description": "Text content of the message"
+          },
+          "messageId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for user messages"
+          },
+          "generationTimestamp": {
+            "type": "integer",
+            "description": "Probably a Unix timestamp in milliseconds for message generation"
+          },
+          "parts": {
+            "type": "array",
+            "description": "Array of message parts for assistant messages",
+            "items": {
+              "type": "object",
+              "required": ["type"],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["text", "reasoning", "tool-invocation", "source"],
+                  "description": "Type of message part"
+                },
+                "text": {
+                  "type": "string",
+                  "description": "Text content of the part"
+                },
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "description": "Unique identifier for reasoning parts"
+                },
+                "state": {
+                  "type": "string",
+                  "enum": ["progress", "done", "call", "result"],
+                  "description": "State indicator for reasoning or tool invocation progress"
+                },
+                "partIndex": {
+                  "type": "integer",
+                  "description": "Probably an index for ordering reasoning parts"
+                },
+                "complete": {
+                  "type": "boolean",
+                  "description": "Probably indicates if reasoning part is complete"
+                },
+                "summaryText": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Probably a summary of reasoning text"
+                },
+                "encryptedText": {
+                  "type": "string",
+                  "description": "Probably an encrypted version of the reasoning text"
+                },
+                "sourceUpstreamId": {
+                  "type": "string",
+                  "description": "Probably a source identifier for the reasoning"
+                },
+                "sourceModelId": {
+                  "type": "string",
+                  "description": "Probably a model identifier for the source"
+                },
+                "redacted": {
+                  "type": "boolean",
+                  "description": "Probably indicates if content is redacted"
+                },
+                "toolCallId": {
+                  "type": "string",
+                  "description": "Identifier for tool call invocations"
+                },
+                "toolName": {
+                  "type": "string",
+                  "description": "Name of the tool being invoked"
+                },
+                "toolArguments": {
+                  "type": "string",
+                  "description": "JSON string of arguments passed to the tool"
+                },
+                "result": {
+                  "type": "string",
+                  "description": "Result message from tool invocation"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "Data returned from tool invocation",
+                  "properties": {
+                    "version": {
+                      "type": "integer",
+                      "description": "Probably a version number for the data format"
+                    },
+                    "markerFormat": {
+                      "type": "string",
+                      "description": "Probably a format string for citation markers"
+                    },
+                    "urls": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "description": "Array of URLs from search results"
+                    },
+                    "citations": {
+                      "type": "array",
+                      "description": "Array of citation objects from search results",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer",
+                            "description": "Numeric identifier for the citation"
+                          },
+                          "url": {
+                            "type": "string",
+                            "format": "uri",
+                            "description": "URL of the cited source"
+                          },
+                          "title": {
+                            "type": "string",
+                            "description": "Title of the cited source"
+                          },
+                          "domain": {
+                            "type": "string",
+                            "description": "Domain of the cited source"
+                          },
+                          "root_domain": {
+                            "type": "string",
+                            "description": "Root domain of the cited source"
+                          },
+                          "site_name": {
+                            "type": "string",
+                            "description": "Name of the site"
+                          },
+                          "published": {
+                            "type": ["string", "null"],
+                            "description": "Probably a publication date"
+                          },
+                          "chunkIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "Probably identifiers for text chunks from the source"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "source": {
+                  "type": "object",
+                  "description": "Source reference for citations",
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "format": "uri",
+                      "description": "URL of the source"
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Title of the source"
+                    },
+                    "site": {
+                      "type": "string",
+                      "description": "Site name of the source"
+                    }
+                  },
+                  "required": ["url", "title", "site"]
+                }
+              }
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "inactive"],
+            "description": "Probably a status indicator for the message"
+          },
+          "model": {
+            "type": "string",
+            "description": "Model identifier for assistant messages"
+          },
+          "origin": {
+            "type": "string",
+            "description": "Probably a source type indicator for the message"
+          },
+          "reasoningDurationMs": {
+            "type": "integer",
+            "description": "Probably a duration in milliseconds for reasoning process"
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Metadata for the chat",
+      "properties": {
+        "customization": {
+          "type": "object",
+          "properties": {
+            "shouldSeekClarity": {
+              "type": "boolean",
+              "description": "Probably a flag for whether the assistant should seek clarification"
+            }
+          }
+        }
+      }
+    },
+    "chatId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for the chat"
+    },
+    "lastEdit": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of last edit"
+    },
+    "lastEditType": {
+      "type": "string",
+      "description": "Probably a type indicator for the last edit action"
+    },
+    "pinned": {
+      "type": "boolean",
+      "description": "Whether the chat is pinned"
+    },
+    "pendingSync": {
+      "type": "boolean",
+      "description": "Probably indicates if the chat has pending sync operations"
+    }
+  },
+  "additionalProperties": false
+}
