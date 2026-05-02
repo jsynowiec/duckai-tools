@@ -9,3 +9,4 @@ That's why I created this repository. It provides quality-of-life tools and scri
 ## Tools
 
 - [Conversations History Export Bookmarklet](src/export-bookmarklet/README.md) — a bookmarklet to export all your locally stored conversations as a JSON file.
+- [Transcripts](src/transcripts/README.md) — a TUI for browsing exported conversations and exporting them as Markdown or HTML.

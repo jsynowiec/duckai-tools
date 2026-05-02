@@ -1,0 +1,22 @@
+[project]
+name = "transcripts"
+version = "0.1.0"
+description = "TUI Chat Viewer for DuckDuckGo AI Chat transcripts"
+requires-python = ">=3.12"
+dependencies = [
+    "textual>=3.0",
+    "chevron",
+    "markdown",
+    "pydantic>=2.0",
+]
+
+[project.scripts]
+transcripts = "transcripts.app:main"
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"transcripts" = "."}
+packages = ["transcripts", "transcripts.screens"]

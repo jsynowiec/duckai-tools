@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{title}}</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --user-bg: #f0f4ff;
+    --assistant-bg: #fafafa;
+    --reasoning-bg: #fffbeb;
+    --tool-bg: #f0fdf4;
+    --source-bg: #faf5ff;
+    --accent: #4f46e5;
+    --radius: 8px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111111;
+      --fg: #e5e5e5;
+      --muted: #9ca3af;
+      --border: #2d2d2d;
+      --user-bg: #1e1e2e;
+      --assistant-bg: #1a1a1a;
+      --reasoning-bg: #2a2315;
+      --tool-bg: #15221a;
+      --source-bg: #231528;
+      --accent: #818cf8;
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.6;
+    max-width: 768px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+  header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { font-size: 1.5rem; font-weight: 600; }
+  header .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  header .meta span { white-space: nowrap; }
+  header .meta .model { color: var(--accent); font-weight: 500; }
+  .message { margin-bottom: 1.25rem; }
+  .turn {
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+  }
+  .turn-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+  }
+  .turn-header .time { font-weight: 400; color: var(--muted); text-transform: none; letter-spacing: 0; }
+  .user .turn { background: var(--user-bg); }
+  .user .turn-header { color: var(--accent); }
+  .assistant .turn { background: var(--assistant-bg); }
+  .assistant .turn-header { color: var(--muted); }
+  .reasoning {
+    background: var(--reasoning-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  .reasoning summary {
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+  }
+  .reasoning .duration { font-weight: 400; }
+  .reasoning .body { margin-top: 0.5rem; white-space: pre-wrap; }
+  .tool-call {
+    background: var(--tool-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.85rem;
+  }
+  .tool-call .tool-name {
+    font-family: ui-monospace, "SF Mono", monospace;
+    font-weight: 600;
+    font-size: 0.8rem;
+  }
+  .tool-call .tool-args {
+    font-family: ui-monospace, "SF Mono", monospace;
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 0.25rem;
+    word-break: break-all;
+  }
+  .tool-call .tool-result {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border);
+    white-space: pre-wrap;
+  }
+  .source {
+    background: var(--source-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.5rem 1rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.85rem;
+  }
+  .source a { color: var(--accent); text-decoration: none; }
+  .source a:hover { text-decoration: underline; }
+  .source .site { color: var(--muted); font-size: 0.8rem; }
+  .content p { margin-bottom: 0.5rem; }
+  .content p:last-child { margin-bottom: 0; }
+  .content code {
+    font-family: ui-monospace, "SF Mono", monospace;
+    background: var(--border);
+    padding: 0.15em 0.35em;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+  .content pre {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    overflow-x: auto;
+    margin: 0.5rem 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+  .content pre code { background: none; padding: 0; }
+  footer {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>{{title}}</h1>
+  <div class="meta">
+    <span class="model">{{model}}</span>
+    <span>Created: {{firstMessageCreatedAt}}</span>
+    <span>Updated: {{lastEdit}}</span>
+    <span>{{messageCount}} messages</span>
+  </div>
+</header>
+
+{{#messages}}
+{{#isUser}}
+<div class="message user">
+  <div class="turn">
+    <div class="turn-header">
+      <span>User</span>
+      <span class="time">{{createdAt}}</span>
+    </div>
+    <div class="content">{{{contentHtml}}}</div>
+  </div>
+</div>
+{{/isUser}}
+
+{{#isAssistant}}
+<div class="message assistant">
+  {{#parts}}
+  {{#isReasoning}}
+  <details class="reasoning">
+    <summary>Reasoning <span class="duration">{{#reasoningDurationMs}}({{reasoningDurationMs}}ms){{/reasoningDurationMs}}</span></summary>
+    <div class="body">{{#summaryText}}{{.}}{{/summaryText}}</div>
+  </details>
+  {{/isReasoning}}
+
+  {{#isToolInvocation}}
+  <div class="tool-call">
+    <div class="tool-name">{{toolName}}</div>
+    <div class="tool-args">{{toolArguments}}</div>
+    {{#result}}<div class="tool-result">{{result}}</div>{{/result}}
+  </div>
+  {{/isToolInvocation}}
+
+  {{#isSource}}
+  <div class="source">
+    <a href="{{url}}" target="_blank">{{title}}</a>
+    <span class="site">{{site}}</span>
+  </div>
+  {{/isSource}}
+  {{/parts}}
+
+  <div class="turn">
+    <div class="turn-header">
+      <span>Assistant{{#model}} · {{model}}{{/model}}</span>
+      <span class="time">{{createdAt}}</span>
+    </div>
+    <div class="content">
+      {{#parts}}{{#isText}}{{{textHtml}}}{{/isText}}{{/parts}}
+    </div>
+  </div>
+</div>
+{{/isAssistant}}
+{{/messages}}
+
+<footer>
+  Exported from DuckDuckGo AI Chat · {{lastEdit}}
+</footer>
+
+</body>
+</html>
