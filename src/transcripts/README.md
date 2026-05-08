@@ -24,3 +24,19 @@ uv run transcripts path/to/export.json
 | View | `e` | Export current chat |
 
 Export writes either Markdown or HTML. HTML exports render Markdown content (code blocks, lists, emphasis) as formatted HTML.
+
+## Screenshots
+
+### TUI
+
+<div style="display: flex; gap: 10px;">
+  <img src="assets/tui-list.png" width="45%" />
+  <img src="assets/tui-details.png" width="45%" />
+</div>
+
+### Exports
+
+<div style="display: flex; gap: 10px;">
+  <img src="assets/html-export.png" width="45%" />
+  <img src="assets/md-export.png" width="45%" />
+</div>
