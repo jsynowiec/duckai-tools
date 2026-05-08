@@ -5,233 +5,142 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{title}}</title>
 <style>
+  @import "https://www.nerdfonts.com/assets/css/webfont.css";
   :root {
     --bg: #ffffff;
-    --fg: #1a1a1a;
+    --fg: #1f2937;
     --muted: #6b7280;
     --border: #e5e7eb;
-    --user-bg: #f0f4ff;
-    --assistant-bg: #fafafa;
-    --reasoning-bg: #fffbeb;
-    --tool-bg: #f0fdf4;
-    --source-bg: #faf5ff;
-    --accent: #4f46e5;
-    --radius: 8px;
+    --soft: #f8fafc;
+    --user-bg: #eef6ff;
+    --assistant-bg: #f9fafb;
+    --meta-row: #f8fafc;
+    --info-bg: #fff8e8;
+    --tool-bg: #eefaf1;
+    --source-bg: #f7f4ff;
+    --radius: 10px;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #111111;
-      --fg: #e5e5e5;
-      --muted: #9ca3af;
-      --border: #2d2d2d;
-      --user-bg: #1e1e2e;
-      --assistant-bg: #1a1a1a;
-      --reasoning-bg: #2a2315;
-      --tool-bg: #15221a;
-      --source-bg: #231528;
-      --accent: #818cf8;
-    }
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { box-sizing: border-box; }
   body {
+    margin: 0 auto;
+    max-width: 860px;
+    padding: 32px 16px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: var(--bg);
     color: var(--fg);
-    line-height: 1.6;
-    max-width: 768px;
-    margin: 0 auto;
-    padding: 2rem 1rem;
+    line-height: 1.55;
   }
-  header {
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border);
+  h1 { margin: 0 0 14px; font-size: 1.5rem; }
+  .nf { margin-right: 0.35em; }
+  .meta-table {
+    width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 24px;
+    border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
   }
-  header h1 { font-size: 1.5rem; font-weight: 600; }
-  header .meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem 1.5rem;
-    margin-top: 0.5rem;
-    font-size: 0.8rem;
-    color: var(--muted);
-  }
-  header .meta span { white-space: nowrap; }
-  header .meta .model { color: var(--accent); font-weight: 500; }
-  .message { margin-bottom: 1.25rem; }
-  .turn {
-    padding: 1rem 1.25rem;
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-  }
-  .turn-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 600;
-  }
-  .turn-header .time { font-weight: 400; color: var(--muted); text-transform: none; letter-spacing: 0; }
+  .meta-table td { font-size: 0.85rem; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  .meta-table tr:last-child td { border-bottom: none; }
+  .meta-table .key { width: 180px; color: var(--muted); background: var(--meta-row); }
+  .meta-table .value { color: #374151; }
+  .message { margin-bottom: 14px; }
+  .turn { border: 1px solid var(--border); border-radius: var(--radius); background: var(--soft); padding: 10px 12px; }
   .user .turn { background: var(--user-bg); }
-  .user .turn-header { color: var(--accent); }
   .assistant .turn { background: var(--assistant-bg); }
-  .assistant .turn-header { color: var(--muted); }
-  .reasoning {
-    background: var(--reasoning-bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 0.75rem 1rem;
-    margin-bottom: 0.75rem;
-    font-size: 0.9rem;
-    color: var(--muted);
-  }
-  .reasoning summary {
-    cursor: pointer;
-    font-weight: 500;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--muted);
-  }
-  .reasoning .duration { font-weight: 400; }
-  .reasoning .body { margin-top: 0.5rem; white-space: pre-wrap; }
-  .tool-call {
-    background: var(--tool-bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 0.75rem 1rem;
-    margin-bottom: 0.75rem;
-    font-size: 0.85rem;
-  }
-  .tool-call .tool-name {
-    font-family: ui-monospace, "SF Mono", monospace;
-    font-weight: 600;
-    font-size: 0.8rem;
-  }
-  .tool-call .tool-args {
-    font-family: ui-monospace, "SF Mono", monospace;
-    font-size: 0.8rem;
-    color: var(--muted);
-    margin-top: 0.25rem;
-    word-break: break-all;
-  }
-  .tool-call .tool-result {
-    margin-top: 0.5rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid var(--border);
-    white-space: pre-wrap;
-  }
-  .source {
-    background: var(--source-bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 0.5rem 1rem;
-    margin-bottom: 0.75rem;
-    font-size: 0.85rem;
-  }
-  .source a { color: var(--accent); text-decoration: none; }
-  .source a:hover { text-decoration: underline; }
-  .source .site { color: var(--muted); font-size: 0.8rem; }
-  .content p { margin-bottom: 0.5rem; }
+  .turn-header { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; }
+  .turn-extra { border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 12px; margin-bottom: 8px; font-size: 0.9rem; }
+  .assistant-nested { margin-top: 8px; margin-left: 18px; padding-left: 10px; border-left: 2px solid var(--border); }
+  .assistant-trace .assistant-nested { margin-top: 0; margin-left: 0; }
+  .reasoning { background: var(--info-bg); }
+  .tool-call { background: var(--tool-bg); }
+  .source { background: var(--source-bg); }
+  .content p { margin: 0 0 6px; }
   .content p:last-child { margin-bottom: 0; }
-  .content code {
-    font-family: ui-monospace, "SF Mono", monospace;
-    background: var(--border);
-    padding: 0.15em 0.35em;
-    border-radius: 4px;
-    font-size: 0.9em;
-  }
-  .content pre {
-    background: var(--bg);
+  .message .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0;
     border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1rem;
-    overflow-x: auto;
-    margin: 0.5rem 0;
-    font-size: 0.85rem;
-    line-height: 1.5;
+    background: #ffffff;
   }
-  .content pre code { background: none; padding: 0; }
-  footer {
-    margin-top: 2rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border);
-    font-size: 0.75rem;
-    color: var(--muted);
-    text-align: center;
+  .message .content th,
+  .message .content td {
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
   }
+  .message .content th {
+    background: #f3f4f6;
+    color: #374151;
+    font-weight: 600;
+  }
+  .message .content tr:nth-child(even) td { background: #fafafa; }
+  details > summary { cursor: pointer; }
+  code { background: #e5e7eb; border-radius: 4px; padding: 0.1em 0.3em; font-family: ui-monospace, "SF Mono", monospace; font-size: 0.9em; }
 </style>
 </head>
 <body>
+<h1>{{title}}</h1>
 
-<header>
-  <h1>{{title}}</h1>
-  <div class="meta">
-    <span class="model">{{model}}</span>
-    <span>Created: {{firstMessageCreatedAt}}</span>
-    <span>Updated: {{lastEdit}}</span>
-    <span>{{messageCount}} messages</span>
-  </div>
-</header>
+{{#hasMetadataRows}}
+<table class="meta-table">
+  <tbody>
+    {{#metadataRows}}
+    <tr>
+      <td class="key">{{key}}</td>
+      <td class="value">{{value}}</td>
+    </tr>
+    {{/metadataRows}}
+  </tbody>
+</table>
+{{/hasMetadataRows}}
 
 {{#messages}}
 {{#isUser}}
 <div class="message user">
   <div class="turn">
-    <div class="turn-header">
-      <span>User</span>
-      <span class="time">{{createdAt}}</span>
-    </div>
-    <div class="content">{{{contentHtml}}}</div>
+    <div class="turn-header"><span class="nf {{userIconClass}}"></span>User · {{createdAt}}</div>
+    {{#hasContent}}<div class="content">{{{contentHtml}}}</div>{{/hasContent}}
   </div>
 </div>
 {{/isUser}}
 
 {{#isAssistant}}
-<div class="message assistant">
-  {{#parts}}
+{{#hasAssistantTraceParts}}
+<div class="message assistant-trace">
+  <div class="assistant-nested">
+  <details>
+    <summary><strong><span class="nf nf-md-robot_confused_outline"></span>Reasoning</strong></summary>
+  {{#assistantTraceParts}}
   {{#isReasoning}}
-  <details class="reasoning">
-    <summary>Reasoning <span class="duration">{{#reasoningDurationMs}}({{reasoningDurationMs}}ms){{/reasoningDurationMs}}</span></summary>
-    <div class="body">{{#summaryText}}{{.}}{{/summaryText}}</div>
-  </details>
+  <div class="turn-extra reasoning">
+    <strong><span class="nf {{htmlIconClass}}"></span>{{htmlLabel}}</strong>
+    <div>{{{reasoningBodyHtml}}}</div>
+  </div>
   {{/isReasoning}}
-
   {{#isToolInvocation}}
-  <div class="tool-call">
-    <div class="tool-name">{{toolName}}</div>
-    <div class="tool-args">{{toolArguments}}</div>
-    {{#result}}<div class="tool-result">{{result}}</div>{{/result}}
+  <div class="turn-extra tool-call">
+    <strong><span class="nf {{htmlIconClass}}"></span>{{htmlLabel}}</strong>{{#toolName}} · <code>{{toolName}}</code>{{/toolName}}
+    {{#toolArguments}}<div>Arguments: <code>{{toolArguments}}</code></div>{{/toolArguments}}
+    {{#hasResult}}<div>Result: {{result}}</div>{{/hasResult}}
   </div>
   {{/isToolInvocation}}
-
   {{#isSource}}
-  <div class="source">
-    <a href="{{url}}" target="_blank">{{title}}</a>
-    <span class="site">{{site}}</span>
+  <div class="turn-extra source">
+    <strong>Source</strong> · <a href="{{sourceUrl}}">{{sourceTitle}}</a>
+    {{#hasSourceSite}}<div>{{sourceSite}}</div>{{/hasSourceSite}}
   </div>
   {{/isSource}}
-  {{/parts}}
-
+  {{/assistantTraceParts}}
+  </details>
+  </div>
+</div>
+{{/hasAssistantTraceParts}}
+<div class="message assistant">
   <div class="turn">
-    <div class="turn-header">
-      <span>Assistant{{#model}} · {{model}}{{/model}}</span>
-      <span class="time">{{createdAt}}</span>
-    </div>
-    <div class="content">
-      {{#parts}}{{#isText}}{{{textHtml}}}{{/isText}}{{/parts}}
-    </div>
+    <div class="turn-header"><span class="nf {{assistantIconClass}}"></span>Agent{{#model}} · {{model}}{{/model}} · {{createdAt}}</div>
+    <div class="content">{{#textParts}}{{{textHtml}}}{{/textParts}}</div>
   </div>
 </div>
 {{/isAssistant}}
 {{/messages}}
-
-<footer>
-  Exported from DuckDuckGo AI Chat · {{lastEdit}}
-</footer>
-
 </body>
 </html>

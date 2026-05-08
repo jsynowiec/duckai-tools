@@ -1,58 +1,33 @@
----
-title: "{{title}}"
-model: "{{model}}"
-chatId: "{{chatId}}"
-createdAt: "{{firstMessageCreatedAt}}"
-lastEdit: "{{lastEdit}}"
-pinned: {{pinned}}
-messageCount: {{messageCount}}
----
-
 # {{title}}
 
+{{#hasMetadataRows}}
+| Field | Value |
+| --- | --- |
+{{#metadataRows}}
+| {{key}} | {{value}} |
+{{/metadataRows}}
+
+{{/hasMetadataRows}}
 {{#messages}}
 {{#isUser}}
-
-> [!question] User
-> {{content}}
->
-> *{{createdAt}}*
+> [!question] {{userCalloutTitle}}
+{{#hasContent}}
+{{{contentBlockquote}}}
+{{/hasContent}}
+ 
 
 {{/isUser}}
 {{#isAssistant}}
+{{#hasAssistantTraceParts}}
+{{{assistantTraceGroupBlockquote}}}
+{{/hasAssistantTraceParts}}
 
-> [!note] Assistant ({{model}})
-{{#parts}}
-{{#isText}}
-> {{text}}
-{{/isText}}
-{{#isReasoning}}
-
-> [!info] Reasoning{{#reasoningDurationMs}} — {{reasoningDurationMs}}ms{{/reasoningDurationMs}}
-> {{#summaryText}}
-> {{.}}
-> {{/summaryText}}
-
-{{/isReasoning}}
-{{#isToolInvocation}}
-
-> [!tip] Tool: `{{toolName}}`
-> **Arguments:** `{{toolArguments}}`
-{{#result}}
->
-> **Result:** {{result}}
-{{/result}}
-
-{{/isToolInvocation}}
-{{#isSource}}
-
-> [!cite] Source: [{{title}}]({{url}})
-> {{site}}
-
-{{/isSource}}
-{{/parts}}
->
-> *{{createdAt}}*
-
+{{#hasTextParts}}
+> [!note] {{assistantCalloutTitle}}
+{{#textParts}}
+{{{textBlockquote}}}
+{{/textParts}}
+{{/hasTextParts}}
+ 
 {{/isAssistant}}
 {{/messages}}

@@ -1,14 +1,17 @@
+import asyncio
 import json
 import sys
 from pathlib import Path
 from typing import List
 
+from textual import work
 from textual.app import App
 
 from transcripts.models import Chat
 from transcripts.screens.chat_list import ChatListScreen
 from transcripts.screens.chat_view import ChatViewScreen
 from transcripts.screens.export_dialog import ExportDialogScreen
+from transcripts.screens.loading import LoadingScreen
 
 
 def load_chats_from_export(export_path: Path) -> List[Chat]:
@@ -16,11 +19,8 @@ def load_chats_from_export(export_path: Path) -> List[Chat]:
     with open(export_path, "r") as f:
         data = json.load(f)
 
-    # The export follows the IndexedDB envelope schema:
-    # {databaseName, version, stores: {storeName: {keyPath, autoIncrement, indexes, data}}}
     chats = []
 
-    # Validate top-level structure
     if not isinstance(data, dict):
         raise ValueError("Expected a JSON object at top level")
 
@@ -28,8 +28,7 @@ def load_chats_from_export(export_path: Path) -> List[Chat]:
     if not isinstance(stores, dict):
         raise ValueError("Expected 'stores' to be an object")
 
-    # Iterate over each store
-    for store_name, store_def in stores.items():
+    for _, store_def in stores.items():
         if not isinstance(store_def, dict):
             continue
         records = store_def.get("data", [])
@@ -39,16 +38,11 @@ def load_chats_from_export(export_path: Path) -> List[Chat]:
         for record in records:
             if not isinstance(record, dict):
                 continue
-            # Check if record looks like a chat (has required fields)
             if all(k in record for k in ("chatId", "messages", "title")):
                 try:
-                    chat = Chat.model_validate(record)
-                    chats.append(chat)
+                    chats.append(Chat.model_validate(record))
                 except Exception as e:
-                    # Skip invalid records
-                    print(
-                        f"Warning: skipping invalid chat record: {e}", file=sys.stderr
-                    )
+                    print(f"Warning: skipping invalid chat record: {e}", file=sys.stderr)
                     continue
 
     return chats
@@ -56,6 +50,7 @@ def load_chats_from_export(export_path: Path) -> List[Chat]:
 
 class TranscriptsApp(App):
     SCREENS = {
+        "loading": LoadingScreen,
         "chat_list": ChatListScreen,
         "chat_view": ChatViewScreen,
         "export_dialog": ExportDialogScreen,
@@ -68,11 +63,24 @@ class TranscriptsApp(App):
         self.current_chat: Chat | None = None
 
     def on_mount(self) -> None:
-        self.chats = load_chats_from_export(self.export_path)
+        self.push_screen("loading")
+        self._load_chats_async()
+
+    @work(exclusive=True)
+    async def _load_chats_async(self) -> None:
+        try:
+            self.chats = await asyncio.to_thread(load_chats_from_export, self.export_path)
+        except Exception as exc:
+            self.notify(f"Failed to load export: {exc}", severity="error")
+            self.exit()
+            return
+
         if not self.chats:
             self.notify("No chats found in export file", severity="error")
             self.exit()
             return
+
+        self.pop_screen()
         self.push_screen("chat_list")
 
 
