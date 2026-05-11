@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Duck.ai Quick Switch
 // @description  Spotlight-style quick switcher for recent Duck.ai chats.
-// @version      2.0.0
+// @version      2.0.1
 // @match        https://duck.ai/*
 // @grant        none
 // @run-at       document-end
@@ -93,6 +93,8 @@
     return /Mac|iPhone|iPad|iPod/.test(platform);
   }
 
+  var IS_MAC = isMacPlatform();
+
   function ensureRoot() {
     if (state.root && document.body.contains(state.root)) {
       return state.root;
@@ -100,7 +102,7 @@
 
     var existingRoot = document.getElementById(ROOT_ID);
     if (existingRoot) {
-      existingRoot.parentNode.removeChild(existingRoot);
+      existingRoot.remove();
     }
 
     var root = document.createElement("div");
@@ -317,7 +319,7 @@
 
     var nodes = container.querySelectorAll("[title]");
     var entries = [];
-    var seenClickableElements = [];
+    var seen = new Set();
     var i;
 
     for (i = 0; i < nodes.length; i += 1) {
@@ -330,11 +332,11 @@
         continue;
       }
 
-      if (seenClickableElements.indexOf(clickableElement) !== -1) {
+      if (seen.has(clickableElement)) {
         continue;
       }
 
-      seenClickableElements.push(clickableElement);
+      seen.add(clickableElement);
       entries.push({
         title: title,
         titleLower: title.toLowerCase(),
@@ -429,7 +431,7 @@
   function updateResults(rawQuery) {
     var query = String(rawQuery || "")
       .toLowerCase()
-      .replace(/^\s+|\s+$/g, "");
+      .trim();
     var scored = [];
     var i;
 
@@ -463,9 +465,7 @@
       return;
     }
 
-    var query = state.input
-      ? String(state.input.value || "").replace(/^\s+|\s+$/g, "")
-      : "";
+    var query = state.input ? String(state.input.value || "").trim() : "";
     var showSearchState = query.length >= MIN_QUERY_LENGTH;
 
     state.list.innerHTML = "";
@@ -549,14 +549,7 @@
       element.focus();
     }
 
-    if (typeof element.click === "function") {
-      element.click();
-      return;
-    }
-
-    var clickEvent = document.createEvent("MouseEvents");
-    clickEvent.initMouseEvent("click", true, true, window, 1);
-    element.dispatchEvent(clickEvent);
+    element.click();
   }
 
   function activateResult(index) {
@@ -610,8 +603,8 @@
     state.results = [];
     state.highlightedIndex = -1;
 
-    if (state.root && state.root.parentNode) {
-      state.root.parentNode.removeChild(state.root);
+    if (state.root) {
+      state.root.remove();
     }
 
     state.root = null;
@@ -678,11 +671,8 @@
   }
 
   function checkQuickSwitchShortcut(event) {
-    var shouldUseMeta = isMacPlatform();
-    var modifierPressed = shouldUseMeta ? event.metaKey : event.ctrlKey;
-    var alternateModifierPressed = shouldUseMeta
-      ? event.ctrlKey
-      : event.metaKey;
+    var modifierPressed = IS_MAC ? event.metaKey : event.ctrlKey;
+    var alternateModifierPressed = IS_MAC ? event.ctrlKey : event.metaKey;
     if (!modifierPressed || alternateModifierPressed) {
       return false;
     }
