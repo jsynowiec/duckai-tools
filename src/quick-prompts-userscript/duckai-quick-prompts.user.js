@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Duck.ai Quick Prompts
 // @description  Quick prompts picker for Duck.ai with local storage.
-// @version      1.0.2
+// @version      1.0.3
 // @match        https://duck.ai/*
 // @grant        none
 // @run-at       document-end

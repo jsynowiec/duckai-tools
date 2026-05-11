@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Duck.ai Quick Switch
 // @description  Spotlight-style quick switcher for recent Duck.ai chats.
-// @version      2.0.1
+// @version      2.0.2
 // @match        https://duck.ai/*
 // @grant        none
 // @run-at       document-end
