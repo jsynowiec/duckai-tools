@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Duck.ai Quick Prompts
 // @description  Quick prompts picker for Duck.ai with local storage.
-// @version      1.0.0
+// @version      1.0.1
 // @match        https://duck.ai/*
 // @grant        none
 // @run-at       document-end
@@ -112,11 +112,19 @@
     return /Mac|iPhone|iPad|iPod/.test(platform);
   }
 
+  var IS_MAC = isMacPlatform();
+
+  var dbPromise = null;
+
   function openDatabase() {
-    return new Promise(function (resolve, reject) {
+    if (dbPromise) {
+      return dbPromise;
+    }
+    dbPromise = new Promise(function (resolve, reject) {
       var request = indexedDB.open(DB_NAME, DB_VERSION);
 
       request.onerror = function () {
+        dbPromise = null;
         reject(request.error);
       };
 
@@ -134,6 +142,7 @@
         }
       };
     });
+    return dbPromise;
   }
 
   function getAllPrompts() {
@@ -246,7 +255,7 @@
     }
 
     var titleValid = /\S/.test(titleInput.value.trim());
-    var bodyValid = /\S/.test(bodyInput.value.replace(/^\s+|\s+$/g, ""));
+    var bodyValid = /\S/.test(bodyInput.value.trim());
 
     if (state.validationAttempted) {
       var titleError = titleInput.nextElementSibling;
@@ -352,7 +361,7 @@
   function filterPrompts(query) {
     var q = String(query || "")
       .toLowerCase()
-      .replace(/^\s+|\s+$/g, "");
+      .trim();
     var scored = [];
     var i;
 
@@ -385,7 +394,7 @@
 
     var existingRoot = document.getElementById(ROOT_ID);
     if (existingRoot) {
-      existingRoot.parentNode.removeChild(existingRoot);
+      existingRoot.remove();
     }
 
     var r = ROOT_ID;
@@ -866,7 +875,10 @@
     });
 
     state.discardCancelBtn.addEventListener("click", function () {
-      showSelectView();
+      state.mode = "edit";
+      state.discardContainer.hidden = true;
+      state.formContainer.hidden = false;
+      state.formTitle.focus();
     });
 
     return root;
@@ -1027,11 +1039,8 @@
     state.editingPrompt = prompt;
     state.validationAttempted = false;
     state.originalPrompt = {
-      id: prompt.id,
       title: prompt.title,
       body: prompt.body,
-      createdAt: prompt.createdAt,
-      updatedAt: prompt.updatedAt,
     };
     if (!state.root) {
       return;
@@ -1279,7 +1288,7 @@
   }
 
   function trapFocus(event) {
-    if (state.mode !== "select" && state.mode !== "edit") {
+    if (state.mode === "closed") {
       return;
     }
 
@@ -1301,88 +1310,6 @@
         event.preventDefault();
         first.focus();
       }
-    }
-  }
-
-  function openOverlay() {
-    if (state.isOpen) {
-      return;
-    }
-
-    state.previousFocus = document.activeElement;
-    ensureRoot();
-    state.isOpen = true;
-    state.mode = "select";
-    state.searchQuery = "";
-    state.highlightedIndex = -1;
-    state.input.value = "";
-    state.input.disabled = false;
-
-    getAllPrompts()
-      .then(function (prompts) {
-        if (!state.isOpen) {
-          return;
-        }
-        state.prompts = prompts;
-        updateFilteredPrompts();
-        state.input.focus();
-      })
-      .catch(function (err) {
-        if (!state.isOpen) {
-          return;
-        }
-        console.error("Failed to load prompts:", err);
-        state.prompts = [];
-        updateFilteredPrompts();
-        state.input.focus();
-      });
-
-    document.addEventListener("keydown", state._keydownHandler, true);
-  }
-
-  function closeOverlay() {
-    if (!state.isOpen) {
-      return;
-    }
-
-    state.isOpen = false;
-    state.mode = "closed";
-    state.editingPrompt = null;
-    state.originalPrompt = null;
-    state.searchQuery = "";
-    state.filteredPrompts = [];
-    state.highlightedIndex = -1;
-    state.deletingIndex = -1;
-
-    if (state.root && state.root.parentNode) {
-      state.root.parentNode.removeChild(state.root);
-    }
-
-    state.root = null;
-    state.input = null;
-    state.list = null;
-    state.hint = null;
-    state.empty = null;
-    state.formContainer = null;
-    state.formTitle = null;
-    state.formBody = null;
-    state.confirmContainer = null;
-    state.confirmTitleEl = null;
-    state.confirmTextEl = null;
-    state.confirmDeleteBtn = null;
-    state.confirmCancelBtn = null;
-    state.discardContainer = null;
-    state.discardConfirmBtn = null;
-    state.discardCancelBtn = null;
-
-    document.removeEventListener("keydown", state._keydownHandler, true);
-
-    if (
-      state.previousFocus &&
-      typeof state.previousFocus.focus === "function"
-    ) {
-      state.previousFocus.focus();
-      state.previousFocus = null;
     }
   }
 
@@ -1440,19 +1367,96 @@
       }
     }
 
-    if (state.mode === "select" || state.mode === "edit") {
-      if (key === "Tab") {
-        trapFocus(event);
-      }
+    if (key === "Tab") {
+      trapFocus(event);
     }
   };
 
+  function openOverlay() {
+    if (state.isOpen) {
+      return;
+    }
+
+    state.previousFocus = document.activeElement;
+    ensureRoot();
+    state.isOpen = true;
+    state.mode = "select";
+    state.searchQuery = "";
+    state.highlightedIndex = -1;
+    state.input.value = "";
+    state.input.disabled = false;
+
+    getAllPrompts()
+      .then(function (prompts) {
+        if (!state.isOpen) {
+          return;
+        }
+        state.prompts = prompts;
+        updateFilteredPrompts();
+        state.input.focus();
+      })
+      .catch(function (err) {
+        if (!state.isOpen) {
+          return;
+        }
+        console.error("Failed to load prompts:", err);
+        state.prompts = [];
+        updateFilteredPrompts();
+        state.input.focus();
+      });
+
+    document.addEventListener("keydown", state._keydownHandler, true);
+  }
+
+  function closeOverlay() {
+    if (!state.isOpen) {
+      return;
+    }
+
+    state.isOpen = false;
+    state.mode = "closed";
+    state.editingPrompt = null;
+    state.originalPrompt = null;
+    state.searchQuery = "";
+    state.filteredPrompts = [];
+    state.highlightedIndex = -1;
+    state.deletingIndex = -1;
+
+    if (state.root) {
+      state.root.remove();
+    }
+
+    state.root = null;
+    state.input = null;
+    state.list = null;
+    state.hint = null;
+    state.empty = null;
+    state.formContainer = null;
+    state.formTitle = null;
+    state.formBody = null;
+    state.confirmContainer = null;
+    state.confirmTitleEl = null;
+    state.confirmTextEl = null;
+    state.confirmDeleteBtn = null;
+    state.confirmCancelBtn = null;
+    state.discardContainer = null;
+    state.discardConfirmBtn = null;
+    state.discardCancelBtn = null;
+
+    document.removeEventListener("keydown", state._keydownHandler, true);
+
+    if (
+      state.previousFocus &&
+      typeof state.previousFocus.focus === "function"
+    ) {
+      state.previousFocus.focus();
+      state.previousFocus = null;
+    }
+  }
+
   function checkShortcut(event) {
-    var shouldUseMeta = isMacPlatform();
-    var modifierPressed = shouldUseMeta ? event.metaKey : event.ctrlKey;
-    var alternateModifierPressed = shouldUseMeta
-      ? event.ctrlKey
-      : event.metaKey;
+    var modifierPressed = IS_MAC ? event.metaKey : event.ctrlKey;
+    var alternateModifierPressed = IS_MAC ? event.ctrlKey : event.metaKey;
 
     if (!modifierPressed || alternateModifierPressed) {
       return false;
@@ -1488,24 +1492,6 @@
     },
     true,
   );
-
-  function findToolbarContainer() {
-    // Use the stable aria-label of the adjacent button as an anchor.
-    // Walk up 3 levels: button → inner wrapper → outer wrapper → group container.
-    var refBtn = document.querySelector(
-      'button[aria-label="Add photos or PDF files"]',
-    );
-    if (!refBtn) {
-      return null;
-    }
-
-    var container =
-      refBtn.parentElement &&
-      refBtn.parentElement.parentElement &&
-      refBtn.parentElement.parentElement.parentElement;
-
-    return container || null;
-  }
 
   function ensureFakeButton() {
     var existing = document.querySelector("[" + STATE_ATTR + '="fake-button"]');
@@ -1587,7 +1573,10 @@
       fakeButtonObserver.disconnect();
     }
 
-    var container = findToolbarContainer();
+    var fakeOuter = document.querySelector(
+      "[" + STATE_ATTR + '="fake-button"]',
+    );
+    var container = fakeOuter && fakeOuter.parentElement;
     if (container) {
       fakeButtonObserver = new MutationObserver(function () {
         if (!document.querySelector("[" + STATE_ATTR + '="fake-button"]')) {
