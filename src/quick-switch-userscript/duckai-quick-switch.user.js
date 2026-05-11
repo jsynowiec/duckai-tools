@@ -7,12 +7,12 @@
 // ==/UserScript==
 
 (function () {
-  'use strict';
+  "use strict";
 
-  var GLOBAL_KEY = '__duckaiToolsQuickSwitchState__';
-  var ROOT_ID = 'duckai-tools-quick-switch-root';
-  var STYLE_TAG_ID = 'duckai-tools-quick-switch-style';
-  var STATE_ATTR = 'data-duckai-tools-quick-switch';
+  var GLOBAL_KEY = "__duckaiToolsQuickSwitchState__";
+  var ROOT_ID = "duckai-tools-quick-switch-root";
+  var STYLE_TAG_ID = "duckai-tools-quick-switch-style";
+  var STATE_ATTR = "data-duckai-tools-quick-switch";
   var MIN_QUERY_LENGTH = 3;
 
   if (window[GLOBAL_KEY] && window[GLOBAL_KEY].initialized) {
@@ -33,10 +33,14 @@
   window[GLOBAL_KEY] = state;
 
   function isMacPlatform() {
-    var platform = '';
-    if (typeof navigator.userAgentData !== 'undefined' && navigator.userAgentData && navigator.userAgentData.platform) {
+    var platform = "";
+    if (
+      typeof navigator.userAgentData !== "undefined" &&
+      navigator.userAgentData &&
+      navigator.userAgentData.platform
+    ) {
       platform = navigator.userAgentData.platform;
-    } else if (typeof navigator.platform === 'string') {
+    } else if (typeof navigator.platform === "string") {
       platform = navigator.platform;
     }
 
@@ -48,8 +52,8 @@
       return false;
     }
 
-    var tagName = target.tagName ? target.tagName.toLowerCase() : '';
-    if (tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
+    var tagName = target.tagName ? target.tagName.toLowerCase() : "";
+    if (tagName === "input" || tagName === "textarea" || tagName === "select") {
       return true;
     }
 
@@ -57,7 +61,10 @@
       return true;
     }
 
-    if (typeof target.closest === 'function' && target.closest('[contenteditable="true"]')) {
+    if (
+      typeof target.closest === "function" &&
+      target.closest('[contenteditable="true"]')
+    ) {
       return true;
     }
 
@@ -74,172 +81,188 @@
       existingRoot.parentNode.removeChild(existingRoot);
     }
 
-    var root = document.createElement('div');
+    var root = document.createElement("div");
     root.id = ROOT_ID;
-    root.setAttribute(STATE_ATTR, 'root');
+    root.setAttribute(STATE_ATTR, "root");
     root.innerHTML = [
       '<style id="' + STYLE_TAG_ID + '">',
-      '#' + ROOT_ID + ' {',
-      '  position: fixed;',
-      '  top: 0;',
-      '  right: 0;',
-      '  bottom: 0;',
-      '  left: 0;',
-      '  z-index: 2147483647;',
+      "#" + ROOT_ID + " {",
+      "  position: fixed;",
+      "  top: 0;",
+      "  right: 0;",
+      "  bottom: 0;",
+      "  left: 0;",
+      "  z-index: 2147483647;",
       '  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;',
-      '}',
-      '#' + ROOT_ID + ' [' + STATE_ATTR + '="overlay"] {',
-      '  position: absolute;',
-      '  top: 0;',
-      '  right: 0;',
-      '  bottom: 0;',
-      '  left: 0;',
-      '  background: rgba(15, 23, 42, 0.22);',
-      '}',
-      '#' + ROOT_ID + ' [' + STATE_ATTR + '="panel"] {',
-      '  position: absolute;',
-      '  top: 25vh;',
-      '  left: 50%;',
-      '  transform: translateX(-50%);',
-      '  width: calc(100vw - 32px);',
-      '  max-width: 680px;',
-      '  max-height: 440px;',
-      '  border-radius: 16px;',
-      '  border: 1px solid rgba(15, 23, 42, 0.1);',
-      '  background: rgba(255, 255, 255, 0.96);',
-      '  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.28);',
-      '  color: #0f172a;',
-      '  overflow: hidden;',
-      '  backdrop-filter: blur(12px);',
-      '  display: flex;',
-      '  flex-direction: column;',
-      '}',
-      '#' + ROOT_ID + ' [' + STATE_ATTR + '="header"] {',
-      '  display: flex;',
-      '  align-items: center;',
-      '  gap: 12px;',
-      '  padding: 14px 16px;',
-      '  border-bottom: 1px solid rgba(15, 23, 42, 0.08);',
-      '}',
-      '#' + ROOT_ID + ' [' + STATE_ATTR + '="input"] {',
-      '  flex: 1;',
-      '  border: 0;',
-      '  outline: none;',
-      '  background: transparent;',
-      '  font-size: 16px;',
-      '  color: inherit;',
-      '}',
-      '#' + ROOT_ID + ' [' + STATE_ATTR + '="input"]::placeholder {',
-      '  color: #64748b;',
-      '}',
-      '#' + ROOT_ID + ' [' + STATE_ATTR + '="close"] {',
-      '  border: 0;',
-      '  background: transparent;',
-      '  color: #475569;',
-      '  cursor: pointer;',
-      '  font-size: 20px;',
-      '  line-height: 1;',
-      '  padding: 4px;',
-      '}',
-      '#' + ROOT_ID + ' [' + STATE_ATTR + '="body"] {',
-      '  padding: 8px;',
-      '  flex: 1 1 auto;',
-      '  min-height: 0;',
-      '  overflow-y: auto;',
-      '}',
-      '#' + ROOT_ID + ' [' + STATE_ATTR + '="hint"],',
-      '#' + ROOT_ID + ' [' + STATE_ATTR + '="empty"] {',
-      '  padding: 16px;',
-      '  font-size: 14px;',
-      '  color: #64748b;',
-      '}',
-      '#' + ROOT_ID + ' [' + STATE_ATTR + '="count"] {',
-      '  padding: 0 16px 8px;',
-      '  font-size: 12px;',
-      '  color: #94a3b8;',
-      '}',
-      '#' + ROOT_ID + ' [' + STATE_ATTR + '="list"] {',
-      '  display: flex;',
-      '  flex-direction: column;',
-      '  gap: 4px;',
-      '}',
-      '#' + ROOT_ID + ' [' + STATE_ATTR + '="item"] {',
-      '  width: 100%;',
-      '  border: 0;',
-      '  background: transparent;',
-      '  color: inherit;',
-      '  text-align: left;',
-      '  border-radius: 12px;',
-      '  padding: 12px 14px;',
-      '  cursor: pointer;',
-      '  font-size: 14px;',
-      '}',
-      '#' + ROOT_ID + ' [' + STATE_ATTR + '="item"]:hover,',
-      '#' + ROOT_ID + ' [' + STATE_ATTR + '="item"][aria-selected="true"] {',
-      '  background: #e2e8f0;',
-      '}',
-      '#' + ROOT_ID + ' [' + STATE_ATTR + '="title"] {',
-      '  display: block;',
-      '  font-weight: 400;',
-      '  white-space: nowrap;',
-      '  overflow: hidden;',
-      '  text-overflow: ellipsis;',
-      '}',
-      '#' + ROOT_ID + ' [' + STATE_ATTR + '="meta"] {',
-      '  display: block;',
-      '  margin-top: 4px;',
-      '  font-size: 12px;',
-      '  color: #64748b;',
-      '}',
-      '</style>',
-      '<div ' + STATE_ATTR + '="overlay"></div>',
-      '<div ' + STATE_ATTR + '="panel" role="dialog" aria-modal="true" aria-label="Quick switch recent chats">',
-      '  <div ' + STATE_ATTR + '="header">',
-      '    <input ' + STATE_ATTR + '="input" type="text" autocomplete="off" spellcheck="false" placeholder="Search chats..." />',
-      '    <button ' + STATE_ATTR + '="close" type="button" aria-label="Close quick switcher">X</button>',
-      '  </div>',
-      '  <div ' + STATE_ATTR + '="count"></div>',
-      '  <div ' + STATE_ATTR + '="body">',
-      '    <div ' + STATE_ATTR + '="hint">Type at least 3 characters to search recent chats.</div>',
-      '    <div ' + STATE_ATTR + '="empty" hidden>No matching chats found.</div>',
-      '    <div ' + STATE_ATTR + '="list" role="listbox" aria-label="Matching chats"></div>',
-      '  </div>',
-      '</div>'
-    ].join('');
+      "}",
+      "#" + ROOT_ID + " [" + STATE_ATTR + '="overlay"] {',
+      "  position: absolute;",
+      "  top: 0;",
+      "  right: 0;",
+      "  bottom: 0;",
+      "  left: 0;",
+      "  background: rgba(15, 23, 42, 0.22);",
+      "}",
+      "#" + ROOT_ID + " [" + STATE_ATTR + '="panel"] {',
+      "  position: absolute;",
+      "  top: 25vh;",
+      "  left: 50%;",
+      "  transform: translateX(-50%);",
+      "  width: calc(100vw - 32px);",
+      "  max-width: 680px;",
+      "  max-height: 440px;",
+      "  border-radius: 16px;",
+      "  border: 1px solid rgba(15, 23, 42, 0.1);",
+      "  background: rgba(255, 255, 255, 0.96);",
+      "  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.28);",
+      "  color: #0f172a;",
+      "  overflow: hidden;",
+      "  backdrop-filter: blur(12px);",
+      "  display: flex;",
+      "  flex-direction: column;",
+      "}",
+      "#" + ROOT_ID + " [" + STATE_ATTR + '="header"] {',
+      "  display: flex;",
+      "  align-items: center;",
+      "  gap: 12px;",
+      "  padding: 14px 16px;",
+      "  border-bottom: 1px solid rgba(15, 23, 42, 0.08);",
+      "}",
+      "#" + ROOT_ID + " [" + STATE_ATTR + '="input"] {',
+      "  flex: 1;",
+      "  border: 0;",
+      "  outline: none;",
+      "  background: transparent;",
+      "  font-size: 16px;",
+      "  color: inherit;",
+      "}",
+      "#" + ROOT_ID + " [" + STATE_ATTR + '="input"]::placeholder {',
+      "  color: #64748b;",
+      "}",
+      "#" + ROOT_ID + " [" + STATE_ATTR + '="close"] {',
+      "  border: 0;",
+      "  background: transparent;",
+      "  color: #475569;",
+      "  cursor: pointer;",
+      "  font-size: 20px;",
+      "  line-height: 1;",
+      "  padding: 4px;",
+      "}",
+      "#" + ROOT_ID + " [" + STATE_ATTR + '="body"] {',
+      "  padding: 8px;",
+      "  flex: 1 1 auto;",
+      "  min-height: 0;",
+      "  overflow-y: auto;",
+      "}",
+      "#" + ROOT_ID + " [" + STATE_ATTR + '="hint"],',
+      "#" + ROOT_ID + " [" + STATE_ATTR + '="empty"] {',
+      "  padding: 16px;",
+      "  font-size: 14px;",
+      "  color: #64748b;",
+      "}",
+      "#" + ROOT_ID + " [" + STATE_ATTR + '="count"] {',
+      "  padding: 0 16px 8px;",
+      "  font-size: 12px;",
+      "  color: #94a3b8;",
+      "}",
+      "#" + ROOT_ID + " [" + STATE_ATTR + '="list"] {',
+      "  display: flex;",
+      "  flex-direction: column;",
+      "  gap: 4px;",
+      "}",
+      "#" + ROOT_ID + " [" + STATE_ATTR + '="item"] {',
+      "  width: 100%;",
+      "  border: 0;",
+      "  background: transparent;",
+      "  color: inherit;",
+      "  text-align: left;",
+      "  border-radius: 12px;",
+      "  padding: 12px 14px;",
+      "  cursor: pointer;",
+      "  font-size: 14px;",
+      "}",
+      "#" + ROOT_ID + " [" + STATE_ATTR + '="item"]:hover,',
+      "#" + ROOT_ID + " [" + STATE_ATTR + '="item"][aria-selected="true"] {',
+      "  background: #e2e8f0;",
+      "}",
+      "#" + ROOT_ID + " [" + STATE_ATTR + '="title"] {',
+      "  display: block;",
+      "  font-weight: 400;",
+      "  white-space: nowrap;",
+      "  overflow: hidden;",
+      "  text-overflow: ellipsis;",
+      "}",
+      "#" + ROOT_ID + " [" + STATE_ATTR + '="meta"] {',
+      "  display: block;",
+      "  margin-top: 4px;",
+      "  font-size: 12px;",
+      "  color: #64748b;",
+      "}",
+      "</style>",
+      "<div " + STATE_ATTR + '="overlay"></div>',
+      "<div " +
+        STATE_ATTR +
+        '="panel" role="dialog" aria-modal="true" aria-label="Quick switch recent chats">',
+      "  <div " + STATE_ATTR + '="header">',
+      "    <input " +
+        STATE_ATTR +
+        '="input" type="text" autocomplete="off" spellcheck="false" placeholder="Search chats..." />',
+      "    <button " +
+        STATE_ATTR +
+        '="close" type="button" aria-label="Close quick switcher">X</button>',
+      "  </div>",
+      "  <div " + STATE_ATTR + '="count"></div>',
+      "  <div " + STATE_ATTR + '="body">',
+      "    <div " +
+        STATE_ATTR +
+        '="hint">Type at least 3 characters to search recent chats.</div>',
+      "    <div " +
+        STATE_ATTR +
+        '="empty" hidden>No matching chats found.</div>',
+      "    <div " +
+        STATE_ATTR +
+        '="list" role="listbox" aria-label="Matching chats"></div>',
+      "  </div>",
+      "</div>",
+    ].join("");
 
     document.body.appendChild(root);
 
     state.root = root;
-    state.input = root.querySelector('[' + STATE_ATTR + '="input"]');
-    state.list = root.querySelector('[' + STATE_ATTR + '="list"]');
-    state.empty = root.querySelector('[' + STATE_ATTR + '="empty"]');
-    state.hint = root.querySelector('[' + STATE_ATTR + '="hint"]');
-    state.count = root.querySelector('[' + STATE_ATTR + '="count"]');
+    state.input = root.querySelector("[" + STATE_ATTR + '="input"]');
+    state.list = root.querySelector("[" + STATE_ATTR + '="list"]');
+    state.empty = root.querySelector("[" + STATE_ATTR + '="empty"]');
+    state.hint = root.querySelector("[" + STATE_ATTR + '="hint"]');
+    state.count = root.querySelector("[" + STATE_ATTR + '="count"]');
 
-    root.querySelector('[' + STATE_ATTR + '="overlay"]').addEventListener('click', function () {
-      closeSwitcher();
+    root
+      .querySelector("[" + STATE_ATTR + '="overlay"]')
+      .addEventListener("click", function () {
+        closeSwitcher();
+      });
+
+    root
+      .querySelector("[" + STATE_ATTR + '="close"]')
+      .addEventListener("click", function () {
+        closeSwitcher();
+      });
+
+    state.input.addEventListener("input", function () {
+      updateResults(state.input.value || "");
     });
 
-    root.querySelector('[' + STATE_ATTR + '="close"]').addEventListener('click', function () {
-      closeSwitcher();
-    });
-
-    state.input.addEventListener('input', function () {
-      updateResults(state.input.value || '');
-    });
-
-    state.list.addEventListener('click', function (event) {
+    state.list.addEventListener("click", function (event) {
       var target = event.target;
-      if (!target || typeof target.closest !== 'function') {
+      if (!target || typeof target.closest !== "function") {
         return;
       }
 
-      var item = target.closest('[' + STATE_ATTR + '="item"]');
+      var item = target.closest("[" + STATE_ATTR + '="item"]');
       if (!item) {
         return;
       }
 
-      var index = parseInt(item.getAttribute('data-index'), 10);
+      var index = parseInt(item.getAttribute("data-index"), 10);
       if (isNaN(index)) {
         return;
       }
@@ -247,18 +270,18 @@
       activateResult(index);
     });
 
-    state.list.addEventListener('mousemove', function (event) {
+    state.list.addEventListener("mousemove", function (event) {
       var target = event.target;
-      if (!target || typeof target.closest !== 'function') {
+      if (!target || typeof target.closest !== "function") {
         return;
       }
 
-      var item = target.closest('[' + STATE_ATTR + '="item"]');
+      var item = target.closest("[" + STATE_ATTR + '="item"]');
       if (!item) {
         return;
       }
 
-      var index = parseInt(item.getAttribute('data-index'), 10);
+      var index = parseInt(item.getAttribute("data-index"), 10);
       if (!isNaN(index) && index !== state.highlightedIndex) {
         state.highlightedIndex = index;
         renderResults();
@@ -269,21 +292,23 @@
   }
 
   function collectChats() {
-    var container = document.querySelector('div[data-testid="RecentChatsList"]');
+    var container = document.querySelector(
+      'div[data-testid="RecentChatsList"]',
+    );
     if (!container) {
       return [];
     }
 
-    var nodes = container.querySelectorAll('[title]');
+    var nodes = container.querySelectorAll("[title]");
     var entries = [];
     var seenClickableElements = [];
     var i;
 
     for (i = 0; i < nodes.length; i += 1) {
       var titleElement = nodes[i];
-      var textElement = titleElement.querySelector('p');
+      var textElement = titleElement.querySelector("p");
       var clickableElement = textElement ? textElement.parentElement : null;
-      var title = titleElement.getAttribute('title');
+      var title = titleElement.getAttribute("title");
 
       if (!clickableElement || !title) {
         continue;
@@ -298,7 +323,7 @@
         title: title,
         titleLower: title.toLowerCase(),
         titleElement: titleElement,
-        clickableElement: clickableElement
+        clickableElement: clickableElement,
       });
     }
 
@@ -335,7 +360,7 @@
         start: substringIndex,
         span: query.length,
         gaps: 0,
-        length: text.length
+        length: text.length,
       };
     }
 
@@ -354,7 +379,7 @@
       start: positions[0],
       span: span,
       gaps: gaps,
-      length: text.length
+      length: text.length,
     };
   }
 
@@ -387,7 +412,9 @@
   }
 
   function updateResults(rawQuery) {
-    var query = String(rawQuery || '').toLowerCase().replace(/^\s+|\s+$/g, '');
+    var query = String(rawQuery || "")
+      .toLowerCase()
+      .replace(/^\s+|\s+$/g, "");
     var scored = [];
     var i;
 
@@ -405,7 +432,7 @@
       if (score.matched) {
         scored.push({
           entry: entry,
-          score: score
+          score: score,
         });
       }
     }
@@ -421,11 +448,13 @@
       return;
     }
 
-    var query = state.input ? String(state.input.value || '').replace(/^\s+|\s+$/g, '') : '';
+    var query = state.input
+      ? String(state.input.value || "").replace(/^\s+|\s+$/g, "")
+      : "";
     var showSearchState = query.length >= MIN_QUERY_LENGTH;
 
-    state.list.innerHTML = '';
-    state.count.textContent = '';
+    state.list.innerHTML = "";
+    state.count.textContent = "";
 
     if (!showSearchState) {
       state.hint.hidden = false;
@@ -437,31 +466,34 @@
 
     if (!state.results.length) {
       state.empty.hidden = false;
-      state.count.textContent = '0 matches';
+      state.count.textContent = "0 matches";
       return;
     }
 
     state.empty.hidden = true;
-    state.count.textContent = state.results.length + (state.results.length === 1 ? ' match' : ' matches');
+    state.count.textContent =
+      state.results.length +
+      (state.results.length === 1 ? " match" : " matches");
 
     var fragment = document.createDocumentFragment();
     var i;
 
     for (i = 0; i < state.results.length; i += 1) {
       var result = state.results[i];
-      var item = document.createElement('button');
+      var item = document.createElement("button");
       var selected = i === state.highlightedIndex;
 
-      item.type = 'button';
-      item.setAttribute(STATE_ATTR, 'item');
-      item.setAttribute('role', 'option');
-      item.setAttribute('aria-selected', selected ? 'true' : 'false');
-      item.setAttribute('data-index', String(i));
+      item.type = "button";
+      item.setAttribute(STATE_ATTR, "item");
+      item.setAttribute("role", "option");
+      item.setAttribute("aria-selected", selected ? "true" : "false");
+      item.setAttribute("data-index", String(i));
       item.innerHTML = [
-        '<span ' + STATE_ATTR + '="title"></span>',
-        '<span ' + STATE_ATTR + '="meta"></span>'
-      ].join('');
-      item.querySelector('[' + STATE_ATTR + '="title"]').textContent = result.entry.title;
+        "<span " + STATE_ATTR + '="title"></span>',
+        "<span " + STATE_ATTR + '="meta"></span>',
+      ].join("");
+      item.querySelector("[" + STATE_ATTR + '="title"]').textContent =
+        result.entry.title;
 
       fragment.appendChild(item);
     }
@@ -474,7 +506,7 @@
       return;
     }
 
-    var items = state.list.querySelectorAll('[' + STATE_ATTR + '="item"]');
+    var items = state.list.querySelectorAll("[" + STATE_ATTR + '="item"]');
     var item = items[state.highlightedIndex];
     var container = state.list.parentElement;
     var itemTop;
@@ -486,7 +518,8 @@
     itemTop = item.offsetTop - state.list.offsetTop;
 
     if (direction > 0) {
-      container.scrollTop = itemTop + item.offsetHeight - container.clientHeight;
+      container.scrollTop =
+        itemTop + item.offsetHeight - container.clientHeight;
       return;
     }
 
@@ -500,17 +533,17 @@
       return;
     }
 
-    if (typeof element.focus === 'function') {
+    if (typeof element.focus === "function") {
       element.focus();
     }
 
-    if (typeof element.click === 'function') {
+    if (typeof element.click === "function") {
       element.click();
       return;
     }
 
-    var clickEvent = document.createEvent('MouseEvents');
-    clickEvent.initMouseEvent('click', true, true, window, 1);
+    var clickEvent = document.createEvent("MouseEvents");
+    clickEvent.initMouseEvent("click", true, true, window, 1);
     element.dispatchEvent(clickEvent);
   }
 
@@ -532,7 +565,9 @@
     if (state.highlightedIndex < 0) {
       state.highlightedIndex = 0;
     } else {
-      state.highlightedIndex = (state.highlightedIndex + direction + state.results.length) % state.results.length;
+      state.highlightedIndex =
+        (state.highlightedIndex + direction + state.results.length) %
+        state.results.length;
     }
 
     renderResults();
@@ -545,7 +580,7 @@
     state.results = [];
     state.highlightedIndex = -1;
     state.isOpen = true;
-    state.input.value = '';
+    state.input.value = "";
     renderResults();
     state.input.focus();
     state.input.select();
@@ -579,13 +614,15 @@
   function handleOpenShortcut(event) {
     var shouldUseMeta = isMacPlatform();
     var modifierPressed = shouldUseMeta ? event.metaKey : event.ctrlKey;
-    var alternateModifierPressed = shouldUseMeta ? event.ctrlKey : event.metaKey;
+    var alternateModifierPressed = shouldUseMeta
+      ? event.ctrlKey
+      : event.metaKey;
 
     if (!modifierPressed || alternateModifierPressed || event.shiftKey) {
       return false;
     }
 
-    if ((event.key || '').toLowerCase() !== 'k') {
+    if ((event.key || "").toLowerCase() !== "k") {
       return false;
     }
 
@@ -604,30 +641,30 @@
       return true;
     }
 
-    var key = event.key || '';
+    var key = event.key || "";
 
-    if (key === 'Escape') {
+    if (key === "Escape") {
       event.preventDefault();
       event.stopPropagation();
       closeSwitcher();
       return true;
     }
 
-    if (key === 'ArrowDown') {
+    if (key === "ArrowDown") {
       event.preventDefault();
       event.stopPropagation();
       moveHighlight(1);
       return true;
     }
 
-    if (key === 'ArrowUp') {
+    if (key === "ArrowUp") {
       event.preventDefault();
       event.stopPropagation();
       moveHighlight(-1);
       return true;
     }
 
-    if (key === 'Enter') {
+    if (key === "Enter") {
       if (state.highlightedIndex >= 0) {
         event.preventDefault();
         event.stopPropagation();
@@ -639,11 +676,15 @@
     return false;
   }
 
-  document.addEventListener('keydown', function (event) {
-    if (handleOpenStateKeys(event)) {
-      return;
-    }
+  document.addEventListener(
+    "keydown",
+    function (event) {
+      if (handleOpenStateKeys(event)) {
+        return;
+      }
 
-    handleOpenShortcut(event);
-  }, true);
+      handleOpenShortcut(event);
+    },
+    true,
+  );
 })();
