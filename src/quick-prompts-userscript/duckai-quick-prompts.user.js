@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Duck.ai Quick Prompts
 // @description  Quick prompts picker for Duck.ai with local storage.
-// @version      1.0.1
+// @version      1.0.2
 // @match        https://duck.ai/*
 // @grant        none
 // @run-at       document-end
@@ -1542,51 +1542,22 @@
     return btn;
   }
 
-  var fakeButtonObserver = null;
   var anchorObserver = null;
 
   function initFakeButton() {
-    var btn = ensureFakeButton();
-    if (!btn) {
-      // Anchor button not in DOM yet (React renders asynchronously); watch for it.
-      if (!anchorObserver) {
-        anchorObserver = new MutationObserver(function () {
-          if (
-            document.querySelector(
-              'button[aria-label="Add photos or PDF files"]',
-            )
-          ) {
-            anchorObserver.disconnect();
-            anchorObserver = null;
-            initFakeButton();
-          }
-        });
-        anchorObserver.observe(document.body, {
-          childList: true,
-          subtree: true,
-        });
-      }
-      return;
-    }
+    ensureFakeButton();
 
-    if (fakeButtonObserver) {
-      fakeButtonObserver.disconnect();
-    }
-
-    var fakeOuter = document.querySelector(
-      "[" + STATE_ATTR + '="fake-button"]',
-    );
-    var container = fakeOuter && fakeOuter.parentElement;
-    if (container) {
-      fakeButtonObserver = new MutationObserver(function () {
-        if (!document.querySelector("[" + STATE_ATTR + '="fake-button"]')) {
+    if (!anchorObserver) {
+      anchorObserver = new MutationObserver(function () {
+        var anchor = document.querySelector(
+          'button[aria-label="Add photos or PDF files"]',
+        );
+        var fake = document.querySelector("[" + STATE_ATTR + '="fake-button"]');
+        if (anchor && !fake) {
           ensureFakeButton();
         }
       });
-      fakeButtonObserver.observe(container, {
-        childList: true,
-        subtree: true,
-      });
+      anchorObserver.observe(document.body, { childList: true, subtree: true });
     }
   }
 
