@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name         Duck.ai Quick Switch
 // @description  Spotlight-style quick switcher for recent Duck.ai chats.
+// @version      2.0.0
 // @match        https://duck.ai/*
 // @grant        none
 // @run-at       document-end
@@ -19,9 +20,54 @@
     return;
   }
 
+  var mediator = window.__duckaiToolsOverlayMediator__;
+  if (!mediator) {
+    mediator = {
+      _registry: [],
+      register: function (config) {
+        this._registry.push(config);
+      },
+      handleShortcut: function (event) {
+        if (event.__duckaiToolsHandled__) {
+          return;
+        }
+        var i;
+        for (i = 0; i < this._registry.length; i += 1) {
+          var reg = this._registry[i];
+          if (reg.shortcutCheck(event)) {
+            event.__duckaiToolsHandled__ = true;
+            event.preventDefault();
+            event.stopPropagation();
+            var openOverlay = null;
+            var j;
+            for (j = 0; j < this._registry.length; j += 1) {
+              if (this._registry[j].isOpen()) {
+                openOverlay = this._registry[j];
+                break;
+              }
+            }
+            if (openOverlay) {
+              if (openOverlay === reg) {
+                openOverlay.close();
+              } else {
+                openOverlay.close();
+                reg.open();
+              }
+            } else {
+              reg.open();
+            }
+            return;
+          }
+        }
+      },
+    };
+    window.__duckaiToolsOverlayMediator__ = mediator;
+  }
+
   var state = window[GLOBAL_KEY] || {};
   state.initialized = true;
   state.isOpen = false;
+  state.previousFocus = null;
   state.chatEntries = [];
   state.results = [];
   state.highlightedIndex = -1;
@@ -45,30 +91,6 @@
     }
 
     return /Mac|iPhone|iPad|iPod/.test(platform);
-  }
-
-  function isEditableTarget(target) {
-    if (!target || target.nodeType !== 1) {
-      return false;
-    }
-
-    var tagName = target.tagName ? target.tagName.toLowerCase() : "";
-    if (tagName === "input" || tagName === "textarea" || tagName === "select") {
-      return true;
-    }
-
-    if (target.isContentEditable) {
-      return true;
-    }
-
-    if (
-      typeof target.closest === "function" &&
-      target.closest('[contenteditable="true"]')
-    ) {
-      return true;
-    }
-
-    return false;
   }
 
   function ensureRoot() {
@@ -101,7 +123,7 @@
       "  right: 0;",
       "  bottom: 0;",
       "  left: 0;",
-      "  background: rgba(15, 23, 42, 0.22);",
+      "  background: var(--duckai-tools-overlay-bg, rgba(0, 0, 0, 0.25));",
       "}",
       "#" + ROOT_ID + " [" + STATE_ATTR + '="panel"] {',
       "  position: absolute;",
@@ -112,10 +134,10 @@
       "  max-width: 680px;",
       "  max-height: 440px;",
       "  border-radius: 16px;",
-      "  border: 1px solid rgba(15, 23, 42, 0.1);",
-      "  background: rgba(255, 255, 255, 0.96);",
-      "  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.28);",
-      "  color: #0f172a;",
+      "  border: 1px solid var(--duckai-tools-panel-border, rgba(0, 0, 0, 0.08));",
+      "  background: var(--duckai-tools-panel-bg, #ffffff);",
+      "  box-shadow: var(--duckai-tools-panel-shadow, 0 24px 80px rgba(0, 0, 0, 0.18));",
+      "  color: var(--duckai-tools-text, #0f172a);",
       "  overflow: hidden;",
       "  backdrop-filter: blur(12px);",
       "  display: flex;",
@@ -126,7 +148,7 @@
       "  align-items: center;",
       "  gap: 12px;",
       "  padding: 14px 16px;",
-      "  border-bottom: 1px solid rgba(15, 23, 42, 0.08);",
+      "  border-bottom: 1px solid var(--duckai-tools-divider, rgba(0, 0, 0, 0.08));",
       "}",
       "#" + ROOT_ID + " [" + STATE_ATTR + '="input"] {',
       "  flex: 1;",
@@ -137,12 +159,12 @@
       "  color: inherit;",
       "}",
       "#" + ROOT_ID + " [" + STATE_ATTR + '="input"]::placeholder {',
-      "  color: #64748b;",
+      "  color: var(--duckai-tools-text-muted, #64748b);",
       "}",
       "#" + ROOT_ID + " [" + STATE_ATTR + '="close"] {',
       "  border: 0;",
       "  background: transparent;",
-      "  color: #475569;",
+      "  color: var(--duckai-tools-text-muted, #64748b);",
       "  cursor: pointer;",
       "  font-size: 20px;",
       "  line-height: 1;",
@@ -158,12 +180,12 @@
       "#" + ROOT_ID + " [" + STATE_ATTR + '="empty"] {',
       "  padding: 16px;",
       "  font-size: 14px;",
-      "  color: #64748b;",
+      "  color: var(--duckai-tools-text-muted, #64748b);",
       "}",
       "#" + ROOT_ID + " [" + STATE_ATTR + '="count"] {',
       "  padding: 0 16px 8px;",
       "  font-size: 12px;",
-      "  color: #94a3b8;",
+      "  color: var(--duckai-tools-text-faint, #94a3b8);",
       "}",
       "#" + ROOT_ID + " [" + STATE_ATTR + '="list"] {',
       "  display: flex;",
@@ -183,7 +205,7 @@
       "}",
       "#" + ROOT_ID + " [" + STATE_ATTR + '="item"]:hover,',
       "#" + ROOT_ID + " [" + STATE_ATTR + '="item"][aria-selected="true"] {',
-      "  background: #e2e8f0;",
+      "  background: var(--duckai-tools-hover-bg, #f1f2f4);",
       "}",
       "#" + ROOT_ID + " [" + STATE_ATTR + '="title"] {',
       "  display: block;",
@@ -191,12 +213,6 @@
       "  white-space: nowrap;",
       "  overflow: hidden;",
       "  text-overflow: ellipsis;",
-      "}",
-      "#" + ROOT_ID + " [" + STATE_ATTR + '="meta"] {',
-      "  display: block;",
-      "  margin-top: 4px;",
-      "  font-size: 12px;",
-      "  color: #64748b;",
       "}",
       "</style>",
       "<div " + STATE_ATTR + '="overlay"></div>',
@@ -322,7 +338,6 @@
       entries.push({
         title: title,
         titleLower: title.toLowerCase(),
-        titleElement: titleElement,
         clickableElement: clickableElement,
       });
     }
@@ -488,10 +503,7 @@
       item.setAttribute("role", "option");
       item.setAttribute("aria-selected", selected ? "true" : "false");
       item.setAttribute("data-index", String(i));
-      item.innerHTML = [
-        "<span " + STATE_ATTR + '="title"></span>',
-        "<span " + STATE_ATTR + '="meta"></span>',
-      ].join("");
+      item.innerHTML = "<span " + STATE_ATTR + '="title"></span>';
       item.querySelector("[" + STATE_ATTR + '="title"]').textContent =
         result.entry.title;
 
@@ -575,6 +587,10 @@
   }
 
   function openSwitcher() {
+    if (state.isOpen) {
+      return;
+    }
+    state.previousFocus = document.activeElement;
     ensureRoot();
     state.chatEntries = collectChats();
     state.results = [];
@@ -587,6 +603,9 @@
   }
 
   function closeSwitcher() {
+    if (!state.isOpen) {
+      return;
+    }
     state.isOpen = false;
     state.results = [];
     state.highlightedIndex = -1;
@@ -601,35 +620,14 @@
     state.empty = null;
     state.hint = null;
     state.count = null;
-  }
 
-  function toggleSwitcher() {
-    if (state.isOpen) {
-      closeSwitcher();
-    } else {
-      openSwitcher();
+    if (
+      state.previousFocus &&
+      typeof state.previousFocus.focus === "function"
+    ) {
+      state.previousFocus.focus();
+      state.previousFocus = null;
     }
-  }
-
-  function handleOpenShortcut(event) {
-    var shouldUseMeta = isMacPlatform();
-    var modifierPressed = shouldUseMeta ? event.metaKey : event.ctrlKey;
-    var alternateModifierPressed = shouldUseMeta
-      ? event.ctrlKey
-      : event.metaKey;
-
-    if (!modifierPressed || alternateModifierPressed || event.shiftKey) {
-      return false;
-    }
-
-    if ((event.key || "").toLowerCase() !== "k") {
-      return false;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-    toggleSwitcher();
-    return true;
   }
 
   function handleOpenStateKeys(event) {
@@ -637,7 +635,10 @@
       return false;
     }
 
-    if (handleOpenShortcut(event)) {
+    if (checkQuickSwitchShortcut(event)) {
+      event.preventDefault();
+      event.stopPropagation();
+      closeSwitcher();
       return true;
     }
 
@@ -676,14 +677,47 @@
     return false;
   }
 
+  function checkQuickSwitchShortcut(event) {
+    var shouldUseMeta = isMacPlatform();
+    var modifierPressed = shouldUseMeta ? event.metaKey : event.ctrlKey;
+    var alternateModifierPressed = shouldUseMeta
+      ? event.ctrlKey
+      : event.metaKey;
+    if (!modifierPressed || alternateModifierPressed) {
+      return false;
+    }
+    if (event.shiftKey) {
+      return false;
+    }
+    return (event.key || "").toLowerCase() === "k";
+  }
+
+  function isQuickSwitchOpen() {
+    return state.isOpen;
+  }
+
+  mediator.register({
+    name: "quick-switch",
+    shortcutCheck: checkQuickSwitchShortcut,
+    open: function () {
+      openSwitcher();
+    },
+    close: function () {
+      closeSwitcher();
+    },
+    isOpen: isQuickSwitchOpen,
+  });
+
   document.addEventListener(
     "keydown",
     function (event) {
+      if (event.__duckaiToolsHandled__) {
+        return;
+      }
       if (handleOpenStateKeys(event)) {
         return;
       }
-
-      handleOpenShortcut(event);
+      mediator.handleShortcut(event);
     },
     true,
   );
