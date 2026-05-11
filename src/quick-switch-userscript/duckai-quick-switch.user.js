@@ -623,6 +623,43 @@
     }
   }
 
+  function getFocusableElements() {
+    if (!state.root) {
+      return [];
+    }
+
+    var selector = 'button, input, [tabindex]:not([tabindex="-1"])';
+    var elements = Array.prototype.slice.call(
+      state.root.querySelectorAll(selector),
+    );
+
+    return elements.filter(function (el) {
+      return !el.disabled && el.offsetParent !== null;
+    });
+  }
+
+  function trapFocus(event) {
+    var focusable = getFocusableElements();
+    if (focusable.length === 0) {
+      return;
+    }
+
+    var first = focusable[0];
+    var last = focusable[focusable.length - 1];
+
+    if (event.shiftKey) {
+      if (document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+  }
+
   function handleOpenStateKeys(event) {
     if (!state.isOpen) {
       return false;
@@ -665,6 +702,10 @@
         activateResult(state.highlightedIndex);
         return true;
       }
+    }
+
+    if (key === "Tab") {
+      trapFocus(event);
     }
 
     return false;
