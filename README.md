@@ -10,6 +10,7 @@ That's why I created this repository. It provides quality-of-life tools and scri
 
 - [Conversations History Export Bookmarklet](src/export-bookmarklet/README.md) — a bookmarklet to export all your locally stored conversations as a JSON file.
 - [Quick Switch Userscript](src/quick-switch-userscript/README.md) — a userscript that adds a Spotlight-style recent chat switcher.
+- [Quick Prompts Userscript](src/quick-prompts-userscript/) — a userscript that adds a locally-stored quick prompts picker.
 - [Transcripts](src/transcripts/README.md) — a TUI for browsing exported conversations and exporting them as Markdown or HTML.
 
 ## Shared Theme (userscripts)
