@@ -1,0 +1,46 @@
+/* ==UserStyle==
+// @name         Duck.ai Tools Theme
+// @description  Shared color theme for Duck.ai Tools userscripts. Adapts to the system light/dark preference automatically.
+// @match        https://duck.ai/*
+// @version      1.0.0
+==/UserStyle== */
+
+[id^="duckai-tools-"] {
+	--duckai-tools-overlay-bg: rgba(0, 0, 0, 0.25);
+	--duckai-tools-panel-bg: #ffffff;
+	--duckai-tools-panel-border: rgba(0, 0, 0, 0.08);
+	--duckai-tools-panel-shadow: 0 24px 80px rgba(0, 0, 0, 0.18);
+	--duckai-tools-text: #0f172a;
+	--duckai-tools-text-muted: #64748b;
+	--duckai-tools-text-faint: #94a3b8;
+	--duckai-tools-divider: rgba(0, 0, 0, 0.08);
+	--duckai-tools-hover-bg: #f1f2f4;
+	--duckai-tools-accent: #4361ee;
+	--duckai-tools-accent-hover: #3451d1;
+	--duckai-tools-input-bg: #ffffff;
+	--duckai-tools-input-border: rgba(0, 0, 0, 0.12);
+	--duckai-tools-btn-secondary-bg: #f1f2f4;
+	--duckai-tools-btn-secondary-hover: #e2e4e8;
+	--duckai-tools-btn-secondary-text: #0f172a;
+}
+
+@media (prefers-color-scheme: dark) {
+	[id^="duckai-tools-"] {
+		--duckai-tools-overlay-bg: rgba(0, 0, 0, 0.55);
+		--duckai-tools-panel-bg: #1c1d22;
+		--duckai-tools-panel-border: rgba(255, 255, 255, 0.08);
+		--duckai-tools-panel-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+		--duckai-tools-text: #f1f2f6;
+		--duckai-tools-text-muted: #6b6f85;
+		--duckai-tools-text-faint: #4a4d5e;
+		--duckai-tools-divider: rgba(255, 255, 255, 0.08);
+		--duckai-tools-hover-bg: #2d3040;
+		--duckai-tools-accent: #6172f5;
+		--duckai-tools-accent-hover: #4f5ee8;
+		--duckai-tools-input-bg: #26272e;
+		--duckai-tools-input-border: rgba(255, 255, 255, 0.1);
+		--duckai-tools-btn-secondary-bg: #2a2b33;
+		--duckai-tools-btn-secondary-hover: #33353f;
+		--duckai-tools-btn-secondary-text: #f1f2f6;
+	}
+}
