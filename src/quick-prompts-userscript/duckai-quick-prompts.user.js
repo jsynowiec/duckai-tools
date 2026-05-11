@@ -95,6 +95,7 @@
   state.discardContainer = null;
   state.discardConfirmBtn = null;
   state.discardCancelBtn = null;
+  state.dbPromise = state.dbPromise || null;
   window[GLOBAL_KEY] = state;
 
   function isMacPlatform() {
@@ -114,22 +115,25 @@
 
   var IS_MAC = isMacPlatform();
 
-  var dbPromise = null;
-
   function openDatabase() {
-    if (dbPromise) {
-      return dbPromise;
+    if (state.dbPromise) {
+      return state.dbPromise;
     }
-    dbPromise = new Promise(function (resolve, reject) {
+    state.dbPromise = new Promise(function (resolve, reject) {
       var request = indexedDB.open(DB_NAME, DB_VERSION);
 
       request.onerror = function () {
-        dbPromise = null;
+        state.dbPromise = null;
         reject(request.error);
       };
 
       request.onsuccess = function () {
-        resolve(request.result);
+        var db = request.result;
+        db.onversionchange = function () {
+          db.close();
+          state.dbPromise = null;
+        };
+        resolve(db);
       };
 
       request.onupgradeneeded = function (event) {
@@ -142,7 +146,7 @@
         }
       };
     });
-    return dbPromise;
+    return state.dbPromise;
   }
 
   function getAllPrompts() {
@@ -1206,26 +1210,44 @@
       return;
     }
 
-    var existingValue = textarea.value || "";
-    var newValue = prompt.body;
-    if (existingValue && !/\s$/.test(existingValue)) {
-      newValue = "\n" + newValue;
+    var existing = textarea.value || "";
+    var selStart =
+      typeof textarea.selectionStart === "number"
+        ? textarea.selectionStart
+        : existing.length;
+    var selEnd =
+      typeof textarea.selectionEnd === "number"
+        ? textarea.selectionEnd
+        : selStart;
+    var newValue;
+    var cursorPos;
+
+    if (selStart !== selEnd) {
+      newValue =
+        existing.slice(0, selStart) + prompt.body + existing.slice(selEnd);
+      cursorPos = selStart + prompt.body.length;
+    } else {
+      var body = prompt.body;
+      if (existing && !/\s$/.test(existing)) {
+        body = "\n" + body;
+      }
+      newValue = existing + body;
+      cursorPos = newValue.length;
     }
 
     var nativeInputValueSetter = Object.getOwnPropertyDescriptor(
       window.HTMLTextAreaElement.prototype,
       "value",
     ).set;
-    nativeInputValueSetter.call(textarea, existingValue + newValue);
+    nativeInputValueSetter.call(textarea, newValue);
     textarea.dispatchEvent(new Event("input", { bubbles: true }));
     textarea.dispatchEvent(new Event("change", { bubbles: true }));
 
     closeOverlay();
     textarea.focus();
 
-    var length = textarea.value.length;
     if (textarea.setSelectionRange) {
-      textarea.setSelectionRange(length, length);
+      textarea.setSelectionRange(cursorPos, cursorPos);
     }
   }
 
