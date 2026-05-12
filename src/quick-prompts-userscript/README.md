@@ -2,6 +2,10 @@
 
 A standalone userscript that adds a locally-stored quick-prompts picker to Duck.ai.
 
+<div align="center">
+    <img src="../../assets/quick-prompt-userscript.gif" width="50%"  />
+</div>
+
 The script is plain JavaScript with no imports, build step, or external dependencies. It uses standards-based DOM and keyboard APIs intended to stay compatible with Safari Userscripts.
 
 Make sure the extension is allowed to run on `duck.ai`; otherwise the shortcut will do nothing.

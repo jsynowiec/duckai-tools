@@ -2,6 +2,10 @@
 
 This userscript adds a Spotlight-style quick switcher to `duck.ai` for jumping between recent chats already rendered in the sidebar.
 
+<div align="center">
+    <img src="../../assets/quick-switch-userscript.gif" width="50%"  />
+</div>
+
 The script is plain JavaScript with no imports, build step, or external dependencies. It uses standards-based DOM and keyboard APIs intended to stay compatible with Safari Userscripts.
 
 Make sure the extension is allowed to run on `duck.ai`; otherwise the shortcut will do nothing.
