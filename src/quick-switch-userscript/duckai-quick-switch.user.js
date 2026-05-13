@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Duck.ai Quick Switch
 // @description  Spotlight-style quick switcher for recent Duck.ai chats.
-// @version      2.1.0
+// @version      2.2.0
 // @match        https://duck.ai/*
 // @grant        none
 // @run-at       document-end
@@ -218,6 +218,9 @@
       "  text-overflow: ellipsis;",
       "}",
       "#" + ROOT_ID + " [" + STATE_ATTR + '="new-chat"] {',
+      "  display: flex;",
+      "  align-items: center;",
+      "  gap: 12px;",
       "  width: 100%;",
       "  border: 0;",
       "  background: transparent;",
@@ -238,9 +241,13 @@
       "  color: var(--duckai-tools-text, #0f172a);",
       "}",
       "#" + ROOT_ID + " [" + STATE_ATTR + '="new-chat-separator"] {',
-      "  border: 0;",
-      "  border-top: 1px solid var(--duckai-tools-divider, rgba(0, 0, 0, 0.08));",
-      "  margin: 4px 14px;",
+      "  font-size: 11px;",
+      "  font-weight: 500;",
+      "  color: var(--duckai-tools-text-muted, #64748b);",
+      "  padding: 6px 14px 2px;",
+      "}",
+      "#" + ROOT_ID + " [" + STATE_ATTR + '="new-chat"] svg {',
+      "  flex-shrink: 0;",
       "}",
       "#" + ROOT_ID + " [" + STATE_ATTR + '="match"] {',
       "  font-weight: 700;",
@@ -529,7 +536,7 @@
 
     if (query.length === 0) {
       state.results = [];
-      state.highlightedIndex = -1;
+      state.highlightedIndex = NEW_CHAT_VIRTUAL_INDEX;
       renderResults();
       return;
     }
@@ -575,11 +582,17 @@
         "aria-selected",
         state.highlightedIndex === NEW_CHAT_VIRTUAL_INDEX ? "true" : "false",
       );
-      newChatBtn.textContent = "New chat";
+      newChatBtn.innerHTML =
+        '<svg fill="none" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">' +
+        '<path fill="currentColor" d="M8.072 1a.625.625 0 0 1 0 1.25H4.044a2.75 2.75 0 0 0-2.75 2.727l-.05 6a2.75 2.75 0 0 0 2.75 2.773h8a2.75 2.75 0 0 0 2.75-2.727l.025-3.028a.625.625 0 0 1 1.25.01l-.025 3.028a4 4 0 0 1-4 3.967h-8a4 4 0 0 1-4-4.033l.05-6a4 4 0 0 1 4-3.967zm4.091-.294a2.249 2.249 0 0 1 3.18 3.18l-6.55 6.552a2.6 2.6 0 0 1-.883.58l-2.124.844c-1.006.4-2.01-.581-1.634-1.596l.714-1.926c.131-.353.337-.673.603-.939zm2.297.884a1 1 0 0 0-1.413 0L6.353 8.285a1.4 1.4 0 0 0-.314.49L5.324 10.7l2.125-.844c.172-.068.329-.171.46-.302l6.55-6.551a1 1 0 0 0 0-1.413"/>' +
+        "</svg>" +
+        "New chat";
       fragment.appendChild(newChatBtn);
 
-      var sep = document.createElement("hr");
+      var sep = document.createElement("div");
       sep.setAttribute(STATE_ATTR, "new-chat-separator");
+      sep.setAttribute("role", "presentation");
+      sep.textContent = "Chats";
       fragment.appendChild(sep);
 
       var recents = state.chatEntries.slice(0, RECENT_CHATS_LIMIT);
@@ -753,7 +766,7 @@
     ensureRoot();
     state.chatEntries = collectChats();
     state.results = [];
-    state.highlightedIndex = -1;
+    state.highlightedIndex = NEW_CHAT_VIRTUAL_INDEX;
     state.isOpen = true;
     state.input.value = "";
     renderResults();
