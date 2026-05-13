@@ -823,14 +823,6 @@
             var textEl = el.querySelector("p");
             var clickable = textEl ? textEl.parentElement : el;
             activateElement(clickable);
-
-            if (!wasExpanded) {
-              setTimeout(function () {
-                if (isSidebarExpanded()) {
-                  dispatchSidebarToggle();
-                }
-              }, 150);
-            }
             return;
           }
         }
