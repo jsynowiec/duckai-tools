@@ -11,11 +11,12 @@ That's why I created this repository. It provides quality-of-life tools and scri
 - [Conversations History Export Bookmarklet](src/export-bookmarklet/README.md) — a bookmarklet to export all your locally stored conversations as a JSON file.
 - [Quick Switch Userscript](src/quick-switch-userscript/README.md) — a userscript that adds a Spotlight-style recent chat switcher.
 - [Quick Prompts Userscript](src/quick-prompts-userscript/README.md) — a userscript that adds a locally-stored quick prompts picker.
+- [Keyboard Shortcuts Userscript](src/kb-shortcuts-userscript/README.md) — a userscript that adds a keyboard shortcuts cheat sheet and a settings shortcut.
 - [Transcripts](src/transcripts/README.md) — a TUI for browsing exported conversations and exporting them as Markdown or HTML.
 
 ## Shared Theme (userscripts)
 
-Both userscripts share a single CSS theme file: [`src/duckai-tools.user.css`](src/duckai-tools.user.css).
+All userscripts share a single CSS theme file: [`src/duckai-tools.user.css`](src/duckai-tools.user.css).
 
 Install it **once** — the same file is symlinked into each userscript folder under the same name, so either copy works. It defines CSS custom properties scoped to `[id^="duckai-tools-"]` and switches automatically between light and dark palettes via `@media (prefers-color-scheme: dark)`.
 
