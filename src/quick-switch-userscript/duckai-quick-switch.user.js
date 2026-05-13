@@ -1,6 +1,3 @@
-// ABOUTME: Duck.ai Quick Switch userscript — Spotlight-style chat switcher.
-// ABOUTME: Activated with Cmd/Ctrl+K; shows recent chats and fuzzy search.
-
 // ==UserScript==
 // @name         Duck.ai Quick Switch
 // @description  Spotlight-style quick switcher for recent Duck.ai chats.
