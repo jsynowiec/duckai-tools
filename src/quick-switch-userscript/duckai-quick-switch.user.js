@@ -691,6 +691,13 @@
         recentTitleSpan.setAttribute(STATE_ATTR, "title");
         recentTitleSpan.textContent = recents[i].title;
         recentItem.appendChild(recentTitleSpan);
+
+        if (recents[i].lastEdit) {
+          var recentTimeSpan = document.createElement("span");
+          recentTimeSpan.setAttribute(STATE_ATTR, "time");
+          recentTimeSpan.textContent = formatLastEdit(recents[i].lastEdit);
+          recentItem.appendChild(recentTimeSpan);
+        }
         fragment.appendChild(recentItem);
       }
     } else {
@@ -700,9 +707,13 @@
         return;
       }
 
-      state.count.textContent =
-        state.results.length +
-        (state.results.length === 1 ? " match" : " matches");
+      if (state.results.length === 50) {
+        state.count.textContent = "50+ matches";
+      } else {
+        state.count.textContent =
+          state.results.length +
+          (state.results.length === 1 ? " match" : " matches");
+      }
 
       var ri;
       for (ri = 0; ri < state.results.length; ri += 1) {
@@ -719,6 +730,14 @@
         item.appendChild(
           buildHighlightedTitleSpan(result.entry.title, result.score.positions),
         );
+
+        if (result.entry.lastEdit) {
+          var timeSpan = document.createElement("span");
+          timeSpan.setAttribute(STATE_ATTR, "time");
+          timeSpan.textContent = formatLastEdit(result.entry.lastEdit);
+          item.appendChild(timeSpan);
+        }
+
         fragment.appendChild(item);
       }
     }
