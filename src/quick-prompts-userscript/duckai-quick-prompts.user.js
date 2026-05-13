@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Duck.ai Quick Prompts
 // @description  Quick prompts picker for Duck.ai with local storage.
-// @version      1.1.0
+// @version      1.1.1
 // @match        https://duck.ai/*
 // @grant        none
 // @run-at       document-end
@@ -957,11 +957,13 @@
       "New prompt";
     fragment.appendChild(addRow);
 
-    var sep = document.createElement("div");
-    sep.setAttribute(STATE_ATTR, "new-prompt-separator");
-    sep.setAttribute("role", "presentation");
-    sep.textContent = "Prompts";
-    fragment.appendChild(sep);
+    if (state.filteredPrompts.length > 0) {
+      var sep = document.createElement("div");
+      sep.setAttribute(STATE_ATTR, "new-prompt-separator");
+      sep.setAttribute("role", "presentation");
+      sep.textContent = "Prompts";
+      fragment.appendChild(sep);
+    }
 
     if (!state.filteredPrompts.length && state.searchQuery) {
       state.empty.hidden = false;
