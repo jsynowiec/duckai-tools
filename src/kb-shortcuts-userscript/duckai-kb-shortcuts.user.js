@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Duck.ai Keyboard Shortcuts
 // @description  Keyboard shortcuts cheat sheet for Duck.ai. Cmd+/ to open.
-// @version      1.0.0
+// @version      1.0.1
 // @match        https://duck.ai/*
 // @grant        none
 // @run-at       document-end
@@ -206,7 +206,7 @@
     if (hasQuickPrompts) {
       customItems.push({
         label: "Quick Prompts",
-        keys: ["meta", "shift", "P"],
+        keys: ["meta", "shift", "K"],
       });
     }
     customItems.push({
