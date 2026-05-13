@@ -748,6 +748,76 @@
     }
   }
 
+  function getSidebarElement() {
+    return document.querySelector('section[data-testid="duckai-sidebar"]');
+  }
+
+  function isSidebarExpanded() {
+    var sidebar = getSidebarElement();
+    if (!sidebar) {
+      return false;
+    }
+    return sidebar.offsetWidth > 100;
+  }
+
+  function dispatchSidebarToggle() {
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "s",
+        code: "KeyS",
+        bubbles: true,
+        cancelable: true,
+        metaKey: IS_MAC,
+        ctrlKey: !IS_MAC,
+        shiftKey: true,
+      }),
+    );
+  }
+
+  function activateChatByTitle(title, wasExpanded) {
+    var attempts = 0;
+
+    function checkAndClick() {
+      var sidebar = getSidebarElement();
+      if (sidebar) {
+        var candidates = sidebar.querySelectorAll("[title]");
+        var i;
+        for (i = 0; i < candidates.length; i += 1) {
+          if (candidates[i].getAttribute("title") === title) {
+            var el = candidates[i];
+            var textEl = el.querySelector("p");
+            var clickable = textEl ? textEl.parentElement : el;
+            activateElement(clickable);
+
+            if (!wasExpanded) {
+              setTimeout(function () {
+                if (isSidebarExpanded()) {
+                  dispatchSidebarToggle();
+                }
+              }, 150);
+            }
+            return;
+          }
+        }
+      }
+
+      attempts += 1;
+      if (attempts < 20) {
+        setTimeout(checkAndClick, 50);
+      } else {
+        console.warn(
+          "[duck.ai quick-switch] chat element not found in sidebar:",
+          title,
+        );
+      }
+    }
+
+    if (!wasExpanded) {
+      dispatchSidebarToggle();
+    }
+    setTimeout(checkAndClick, 50);
+  }
+
   function activateElement(element) {
     if (!element) {
       return;
