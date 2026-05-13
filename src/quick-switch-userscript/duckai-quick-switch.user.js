@@ -17,6 +17,8 @@
   // -2 distinguishes "new-chat highlighted" from "nothing highlighted" (-1) and any real index (>= 0)
   var NEW_CHAT_VIRTUAL_INDEX = -2;
   var RECENT_CHATS_LIMIT = 5;
+  var DUCK_DB_NAME = "savedAIChatData";
+  var DUCK_STORE_NAME = "saved-chats";
 
   if (window[GLOBAL_KEY] && window[GLOBAL_KEY].initialized) {
     return;
@@ -78,6 +80,7 @@
   state.list = null;
   state.empty = null;
   state.count = null;
+  state.dbPromise = state.dbPromise || null;
   window[GLOBAL_KEY] = state;
 
   function isMacPlatform() {
