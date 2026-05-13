@@ -439,6 +439,9 @@
 
   function formatLastEdit(isoString) {
     var date = new Date(isoString);
+    if (!isoString || isNaN(date.getTime())) {
+      return "";
+    }
     var now = new Date();
     var todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     var yesterdayStart = new Date(todayStart.getTime() - 86400000);
@@ -846,8 +849,10 @@
 
     if (!wasExpanded) {
       dispatchSidebarToggle();
+      setTimeout(checkAndClick, 50);
+    } else {
+      checkAndClick();
     }
-    setTimeout(checkAndClick, 50);
   }
 
   function activateElement(element) {
