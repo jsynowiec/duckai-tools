@@ -461,44 +461,6 @@
     );
   }
 
-  function collectChats() {
-    var container = document.querySelector(
-      'div[data-testid="RecentChatsList"]',
-    );
-    if (!container) {
-      return [];
-    }
-
-    var nodes = container.querySelectorAll("[title]");
-    var entries = [];
-    var seen = new Set();
-    var i;
-
-    for (i = 0; i < nodes.length; i += 1) {
-      var titleElement = nodes[i];
-      var textElement = titleElement.querySelector("p");
-      var clickableElement = textElement ? textElement.parentElement : null;
-      var title = titleElement.getAttribute("title");
-
-      if (!clickableElement || !title) {
-        continue;
-      }
-
-      if (seen.has(clickableElement)) {
-        continue;
-      }
-
-      seen.add(clickableElement);
-      entries.push({
-        title: title,
-        titleLower: title.toLowerCase(),
-        clickableElement: clickableElement,
-      });
-    }
-
-    return entries;
-  }
-
   function findFuzzyMatchPositions(query, text) {
     var positions = [];
     var searchIndex = 0;
@@ -869,7 +831,7 @@
     }
     state.previousFocus = document.activeElement;
     ensureRoot();
-    state.chatEntries = collectChats();
+    state.chatEntries = [];
     state.results = [];
     state.highlightedIndex = NEW_CHAT_VIRTUAL_INDEX;
     state.isOpen = true;
@@ -877,6 +839,23 @@
     renderResults();
     state.input.focus();
     state.input.select();
+
+    loadChatsFromDB()
+      .then(function (entries) {
+        if (!state.isOpen) {
+          return;
+        }
+        state.chatEntries = entries;
+        var query = state.input ? String(state.input.value || "").trim() : "";
+        if (query.length > 0) {
+          updateResults(query);
+        } else {
+          renderResults();
+        }
+      })
+      .catch(function () {
+        // DB unavailable — overlay stays open with empty list
+      });
   }
 
   function closeSwitcher() {
