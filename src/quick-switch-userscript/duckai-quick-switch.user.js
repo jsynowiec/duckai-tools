@@ -831,13 +831,23 @@
   }
 
   function activateResult(index) {
-    if (index < 0 || index >= state.results.length) {
-      return;
+    var entry;
+    var query = state.input ? String(state.input.value || "").trim() : "";
+    if (query.length > 0) {
+      if (index < 0 || index >= state.results.length) {
+        return;
+      }
+      entry = state.results[index].entry;
+    } else {
+      var limit = Math.min(state.chatEntries.length, RECENT_CHATS_LIMIT);
+      if (index < 0 || index >= limit) {
+        return;
+      }
+      entry = state.chatEntries[index];
     }
-
-    var result = state.results[index];
+    var wasExpanded = isSidebarExpanded();
     closeSwitcher();
-    activateElement(result.entry.clickableElement);
+    activateChatByTitle(entry.title, wasExpanded);
   }
 
   function triggerNewChat() {
