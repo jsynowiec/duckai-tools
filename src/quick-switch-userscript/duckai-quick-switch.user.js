@@ -1,7 +1,10 @@
+// ABOUTME: Duck.ai Quick Switch userscript — Spotlight-style chat switcher.
+// ABOUTME: Activated with Cmd/Ctrl+K; shows recent chats and fuzzy search.
+
 // ==UserScript==
 // @name         Duck.ai Quick Switch
 // @description  Spotlight-style quick switcher for recent Duck.ai chats.
-// @version      2.0.2
+// @version      2.1.0
 // @match        https://duck.ai/*
 // @grant        none
 // @run-at       document-end
@@ -14,7 +17,9 @@
   var ROOT_ID = "duckai-tools-quick-switch-root";
   var STYLE_TAG_ID = "duckai-tools-quick-switch-style";
   var STATE_ATTR = "data-duckai-tools-quick-switch";
-  var MIN_QUERY_LENGTH = 3;
+  // -2 distinguishes "new-chat highlighted" from "nothing highlighted" (-1) and any real index (>= 0)
+  var NEW_CHAT_VIRTUAL_INDEX = -2;
+  var RECENT_CHATS_LIMIT = 5;
 
   if (window[GLOBAL_KEY] && window[GLOBAL_KEY].initialized) {
     return;
@@ -178,7 +183,6 @@
       "  min-height: 0;",
       "  overflow-y: auto;",
       "}",
-      "#" + ROOT_ID + " [" + STATE_ATTR + '="hint"],',
       "#" + ROOT_ID + " [" + STATE_ATTR + '="empty"] {',
       "  padding: 16px;",
       "  font-size: 14px;",
@@ -216,6 +220,34 @@
       "  overflow: hidden;",
       "  text-overflow: ellipsis;",
       "}",
+      "#" + ROOT_ID + " [" + STATE_ATTR + '="new-chat"] {',
+      "  width: 100%;",
+      "  border: 0;",
+      "  background: transparent;",
+      "  color: var(--duckai-tools-text-muted, #64748b);",
+      "  text-align: left;",
+      "  border-radius: 12px;",
+      "  padding: 12px 14px;",
+      "  cursor: pointer;",
+      "  font-size: 14px;",
+      "}",
+      "#" + ROOT_ID + " [" + STATE_ATTR + '="new-chat"]:hover,',
+      "#" +
+        ROOT_ID +
+        " [" +
+        STATE_ATTR +
+        '="new-chat"][aria-selected="true"] {',
+      "  background: var(--duckai-tools-hover-bg, #f1f2f4);",
+      "  color: var(--duckai-tools-text, #0f172a);",
+      "}",
+      "#" + ROOT_ID + " [" + STATE_ATTR + '="new-chat-separator"] {',
+      "  border: 0;",
+      "  border-top: 1px solid var(--duckai-tools-divider, rgba(0, 0, 0, 0.08));",
+      "  margin: 4px 14px;",
+      "}",
+      "#" + ROOT_ID + " [" + STATE_ATTR + '="match"] {',
+      "  font-weight: 700;",
+      "}",
       "</style>",
       "<div " + STATE_ATTR + '="overlay"></div>',
       "<div " +
@@ -233,9 +265,6 @@
       "  <div " + STATE_ATTR + '="body">',
       "    <div " +
         STATE_ATTR +
-        '="hint">Type at least 3 characters to search recent chats.</div>',
-      "    <div " +
-        STATE_ATTR +
         '="empty" hidden>No matching chats found.</div>',
       "    <div " +
         STATE_ATTR +
@@ -250,7 +279,6 @@
     state.input = root.querySelector("[" + STATE_ATTR + '="input"]');
     state.list = root.querySelector("[" + STATE_ATTR + '="list"]');
     state.empty = root.querySelector("[" + STATE_ATTR + '="empty"]');
-    state.hint = root.querySelector("[" + STATE_ATTR + '="hint"]');
     state.count = root.querySelector("[" + STATE_ATTR + '="count"]');
 
     root
@@ -275,6 +303,12 @@
         return;
       }
 
+      var newChatBtn = target.closest("[" + STATE_ATTR + '="new-chat"]');
+      if (newChatBtn) {
+        triggerNewChat();
+        return;
+      }
+
       var item = target.closest("[" + STATE_ATTR + '="item"]');
       if (!item) {
         return;
@@ -291,6 +325,15 @@
     state.list.addEventListener("mousemove", function (event) {
       var target = event.target;
       if (!target || typeof target.closest !== "function") {
+        return;
+      }
+
+      var newChatBtn = target.closest("[" + STATE_ATTR + '="new-chat"]');
+      if (newChatBtn) {
+        if (state.highlightedIndex !== NEW_CHAT_VIRTUAL_INDEX) {
+          state.highlightedIndex = NEW_CHAT_VIRTUAL_INDEX;
+          renderResults();
+        }
         return;
       }
 
@@ -370,6 +413,11 @@
     var substringIndex = text.indexOf(query);
 
     if (substringIndex !== -1) {
+      var subPositions = [];
+      var k;
+      for (k = 0; k < query.length; k += 1) {
+        subPositions.push(substringIndex + k);
+      }
       return {
         matched: true,
         mode: 0,
@@ -378,6 +426,7 @@
         span: query.length,
         gaps: 0,
         length: text.length,
+        positions: subPositions,
       };
     }
 
@@ -389,6 +438,11 @@
     var span = positions[positions.length - 1] - positions[0] + 1;
     var gaps = span - query.length;
 
+    // Reject very scattered fuzzy matches to keep results relevant
+    if (gaps > query.length * 2) {
+      return { matched: false };
+    }
+
     return {
       matched: true,
       mode: 1,
@@ -397,6 +451,7 @@
       span: span,
       gaps: gaps,
       length: text.length,
+      positions: positions,
     };
   }
 
@@ -428,6 +483,46 @@
     return a.entry.title.localeCompare(b.entry.title);
   }
 
+  function buildHighlightedTitleSpan(title, positions) {
+    var titleSpan = document.createElement("span");
+    titleSpan.setAttribute(STATE_ATTR, "title");
+
+    if (!positions || positions.length === 0) {
+      titleSpan.textContent = title;
+      return titleSpan;
+    }
+
+    var posSet = {};
+    var i;
+    for (i = 0; i < positions.length; i += 1) {
+      posSet[positions[i]] = true;
+    }
+
+    i = 0;
+    while (i < title.length) {
+      if (posSet[i]) {
+        var j = i;
+        while (j < title.length && posSet[j]) {
+          j += 1;
+        }
+        var matchSpan = document.createElement("span");
+        matchSpan.setAttribute(STATE_ATTR, "match");
+        matchSpan.textContent = title.slice(i, j);
+        titleSpan.appendChild(matchSpan);
+        i = j;
+      } else {
+        var k = i;
+        while (k < title.length && !posSet[k]) {
+          k += 1;
+        }
+        titleSpan.appendChild(document.createTextNode(title.slice(i, k)));
+        i = k;
+      }
+    }
+
+    return titleSpan;
+  }
+
   function updateResults(rawQuery) {
     var query = String(rawQuery || "")
       .toLowerCase()
@@ -435,7 +530,7 @@
     var scored = [];
     var i;
 
-    if (query.length < MIN_QUERY_LENGTH) {
+    if (query.length === 0) {
       state.results = [];
       state.highlightedIndex = -1;
       renderResults();
@@ -466,68 +561,104 @@
     }
 
     var query = state.input ? String(state.input.value || "").trim() : "";
-    var showSearchState = query.length >= MIN_QUERY_LENGTH;
+    var isSearching = query.length > 0;
 
     state.list.innerHTML = "";
     state.count.textContent = "";
-
-    if (!showSearchState) {
-      state.hint.hidden = false;
-      state.empty.hidden = true;
-      return;
-    }
-
-    state.hint.hidden = true;
-
-    if (!state.results.length) {
-      state.empty.hidden = false;
-      state.count.textContent = "0 matches";
-      return;
-    }
-
     state.empty.hidden = true;
-    state.count.textContent =
-      state.results.length +
-      (state.results.length === 1 ? " match" : " matches");
 
     var fragment = document.createDocumentFragment();
-    var i;
 
-    for (i = 0; i < state.results.length; i += 1) {
-      var result = state.results[i];
-      var item = document.createElement("button");
-      var selected = i === state.highlightedIndex;
+    if (!isSearching) {
+      var newChatBtn = document.createElement("button");
+      newChatBtn.type = "button";
+      newChatBtn.setAttribute(STATE_ATTR, "new-chat");
+      newChatBtn.setAttribute("role", "option");
+      newChatBtn.setAttribute(
+        "aria-selected",
+        state.highlightedIndex === NEW_CHAT_VIRTUAL_INDEX ? "true" : "false",
+      );
+      newChatBtn.textContent = "New chat";
+      fragment.appendChild(newChatBtn);
 
-      item.type = "button";
-      item.setAttribute(STATE_ATTR, "item");
-      item.setAttribute("role", "option");
-      item.setAttribute("aria-selected", selected ? "true" : "false");
-      item.setAttribute("data-index", String(i));
-      item.innerHTML = "<span " + STATE_ATTR + '="title"></span>';
-      item.querySelector("[" + STATE_ATTR + '="title"]').textContent =
-        result.entry.title;
+      var sep = document.createElement("hr");
+      sep.setAttribute(STATE_ATTR, "new-chat-separator");
+      fragment.appendChild(sep);
 
-      fragment.appendChild(item);
+      var recents = state.chatEntries.slice(0, RECENT_CHATS_LIMIT);
+      var i;
+      for (i = 0; i < recents.length; i += 1) {
+        var recentItem = document.createElement("button");
+        recentItem.type = "button";
+        recentItem.setAttribute(STATE_ATTR, "item");
+        recentItem.setAttribute("role", "option");
+        recentItem.setAttribute(
+          "aria-selected",
+          i === state.highlightedIndex ? "true" : "false",
+        );
+        recentItem.setAttribute("data-index", String(i));
+        var recentTitleSpan = document.createElement("span");
+        recentTitleSpan.setAttribute(STATE_ATTR, "title");
+        recentTitleSpan.textContent = recents[i].title;
+        recentItem.appendChild(recentTitleSpan);
+        fragment.appendChild(recentItem);
+      }
+    } else {
+      if (!state.results.length) {
+        state.empty.hidden = false;
+        state.list.appendChild(fragment);
+        return;
+      }
+
+      state.count.textContent =
+        state.results.length +
+        (state.results.length === 1 ? " match" : " matches");
+
+      var ri;
+      for (ri = 0; ri < state.results.length; ri += 1) {
+        var result = state.results[ri];
+        var item = document.createElement("button");
+        item.type = "button";
+        item.setAttribute(STATE_ATTR, "item");
+        item.setAttribute("role", "option");
+        item.setAttribute(
+          "aria-selected",
+          ri === state.highlightedIndex ? "true" : "false",
+        );
+        item.setAttribute("data-index", String(ri));
+        item.appendChild(
+          buildHighlightedTitleSpan(result.entry.title, result.score.positions),
+        );
+        fragment.appendChild(item);
+      }
     }
 
     state.list.appendChild(fragment);
   }
 
   function scrollHighlightedResultIntoView(direction) {
-    if (!state.list || state.highlightedIndex < 0) {
+    var container = state.list ? state.list.parentElement : null;
+    if (!container) {
+      return;
+    }
+
+    if (state.highlightedIndex === NEW_CHAT_VIRTUAL_INDEX) {
+      container.scrollTop = 0;
+      return;
+    }
+
+    if (state.highlightedIndex < 0 || !state.list) {
       return;
     }
 
     var items = state.list.querySelectorAll("[" + STATE_ATTR + '="item"]');
     var item = items[state.highlightedIndex];
-    var container = state.list.parentElement;
-    var itemTop;
 
-    if (!item || !container) {
+    if (!item) {
       return;
     }
 
-    itemTop = item.offsetTop - state.list.offsetTop;
+    var itemTop = item.offsetTop - state.list.offsetTop;
 
     if (direction > 0) {
       container.scrollTop =
@@ -562,17 +693,55 @@
     activateElement(result.entry.clickableElement);
   }
 
-  function moveHighlight(direction) {
-    if (!state.results.length) {
-      return;
-    }
+  function triggerNewChat() {
+    closeSwitcher();
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "o",
+        code: "KeyO",
+        bubbles: true,
+        cancelable: true,
+        metaKey: IS_MAC,
+        ctrlKey: !IS_MAC,
+        shiftKey: true,
+      }),
+    );
+  }
 
-    if (state.highlightedIndex < 0) {
-      state.highlightedIndex = 0;
+  function moveHighlight(direction) {
+    var query = state.input ? String(state.input.value || "").trim() : "";
+    var isSearching = query.length > 0;
+
+    if (isSearching) {
+      if (!state.results.length) {
+        return;
+      }
+
+      if (state.highlightedIndex < 0) {
+        state.highlightedIndex = 0;
+      } else {
+        state.highlightedIndex =
+          (state.highlightedIndex + direction + state.results.length) %
+          state.results.length;
+      }
     } else {
+      var recentCount = Math.min(state.chatEntries.length, RECENT_CHATS_LIMIT);
+      var virtualTotal = recentCount + 1;
+
+      var currentVirtual;
+      if (state.highlightedIndex === NEW_CHAT_VIRTUAL_INDEX) {
+        currentVirtual = 0;
+      } else if (state.highlightedIndex >= 0) {
+        currentVirtual = state.highlightedIndex + 1;
+      } else {
+        // Nothing highlighted yet: Down goes to first item, Up goes to last
+        currentVirtual = direction > 0 ? -1 : virtualTotal;
+      }
+
+      var nextVirtual =
+        (currentVirtual + direction + virtualTotal) % virtualTotal;
       state.highlightedIndex =
-        (state.highlightedIndex + direction + state.results.length) %
-        state.results.length;
+        nextVirtual === 0 ? NEW_CHAT_VIRTUAL_INDEX : nextVirtual - 1;
     }
 
     renderResults();
@@ -611,7 +780,6 @@
     state.input = null;
     state.list = null;
     state.empty = null;
-    state.hint = null;
     state.count = null;
 
     if (
@@ -696,6 +864,13 @@
     }
 
     if (key === "Enter") {
+      if (state.highlightedIndex === NEW_CHAT_VIRTUAL_INDEX) {
+        event.preventDefault();
+        event.stopPropagation();
+        triggerNewChat();
+        return true;
+      }
+
       if (state.highlightedIndex >= 0) {
         event.preventDefault();
         event.stopPropagation();
