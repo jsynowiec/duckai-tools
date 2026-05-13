@@ -14,7 +14,7 @@ Make sure the extension is allowed to run on `duck.ai`; otherwise the shortcut w
 
 ### Safari
 
-1. Install the Userscripts Safari extension from the App Store.
+1. Install the [Userscripts](https://itunes.apple.com/us/app/userscripts/id1463298887) Safari extension from the App Store.
 2. Enable it in Safari and allow it on `https://duck.ai/`.
 3. Create a new CSS file and paste in the contents of [duckai-tools.user.css](duckai-tools.user.css). Save it. This step is optional — without it the script falls back to the light theme only.
 4. Create a new script and paste in the contents of [duckai-quick-switch.user.js](duckai-quick-switch.user.js).
@@ -22,7 +22,7 @@ Make sure the extension is allowed to run on `duck.ai`; otherwise the shortcut w
 
 ### Firefox / Orion / Helium / Chrome
 
-1. Install Tampermonkey from the Chrome Web Store or Firefox Addons.
+1. Install [Tampermonkey](https://www.tampermonkey.net/) from the Chrome Web Store or Firefox Addons.
 2. Install the [Stylus](https://add0n.com/stylus.html) extension and create a new style for `duck.ai` with the contents of [duckai-tools.user.css](duckai-tools.user.css). Save it. This step is optional — without it the script falls back to the light theme only.
 3. Open the Tampermonkey dashboard and create a new userscript.
 4. Replace the default contents with [duckai-quick-switch.user.js](duckai-quick-switch.user.js).
