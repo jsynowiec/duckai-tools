@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Duck.ai Quick Switch
 // @description  Spotlight-style quick switcher for recent Duck.ai chats.
-// @version      3.0.0
+// @version      3.0.1
 // @match        https://duck.ai/*
 // @grant        none
 // @run-at       document-end
@@ -672,11 +672,13 @@
         "New chat";
       fragment.appendChild(newChatBtn);
 
-      var sep = document.createElement("div");
-      sep.setAttribute(STATE_ATTR, "new-chat-separator");
-      sep.setAttribute("role", "presentation");
-      sep.textContent = "Chats";
-      fragment.appendChild(sep);
+      if (state.chatEntries.length > 0) {
+        var sep = document.createElement("div");
+        sep.setAttribute(STATE_ATTR, "new-chat-separator");
+        sep.setAttribute("role", "presentation");
+        sep.textContent = "Chats";
+        fragment.appendChild(sep);
+      }
 
       var recents = state.chatEntries.slice(0, RECENT_CHATS_LIMIT);
       var i;
