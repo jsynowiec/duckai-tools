@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Duck.ai Quick Prompts
 // @description  Quick prompts picker for Duck.ai with local storage.
-// @version      1.1.1
+// @version      1.1.2
 // @match        https://duck.ai/*
 // @grant        none
 // @run-at       document-end
@@ -1505,7 +1505,7 @@
       return false;
     }
 
-    return (event.key || "").toLowerCase() === "p";
+    return (event.key || "").toLowerCase() === "k";
   }
 
   mediator.register({

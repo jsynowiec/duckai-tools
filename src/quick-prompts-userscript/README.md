@@ -12,7 +12,7 @@ Make sure the extension is allowed to run on `duck.ai`; otherwise the shortcut w
 
 ## Features
 
-- **Keyboard shortcut**: `Cmd+Shift+P` (macOS) / `Ctrl+Shift+P` (Windows/Linux)
+- **Keyboard shortcut**: `Cmd+Shift+K` (macOS) / `Ctrl+Shift+K` (Windows/Linux)
 - **Fake toolbar button**: Quick prompts button inserted beside the prompt toolbar
 - **Local storage**: Prompts stored in IndexedDB (`duckaiToolsQuickPrompts` database)
 - **Fuzzy search**: Case-insensitive matching on prompt titles
@@ -40,7 +40,7 @@ Make sure the extension is allowed to run on `duck.ai`; otherwise the shortcut w
 
 ## Usage
 
-- Press `Cmd+Shift+P` on macOS or `Ctrl+Shift+P` on Windows/Linux.
+- Press `Cmd+Shift+K` on macOS or `Ctrl+Shift+K` on Windows/Linux.
   - Or click the Quick prompts button in the prompt toolbar
 
 ### Actions
