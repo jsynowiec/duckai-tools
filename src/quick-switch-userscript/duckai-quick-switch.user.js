@@ -424,6 +424,43 @@
     });
   }
 
+  function formatLastEdit(isoString) {
+    var date = new Date(isoString);
+    var now = new Date();
+    var todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var yesterdayStart = new Date(todayStart.getTime() - 86400000);
+    var itemStart = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+    );
+
+    if (itemStart.getTime() === todayStart.getTime()) {
+      return "Today";
+    }
+    if (itemStart.getTime() === yesterdayStart.getTime()) {
+      return "Yesterday";
+    }
+
+    var months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    return (
+      months[date.getMonth()] + " " + date.getDate() + ", " + date.getFullYear()
+    );
+  }
+
   function collectChats() {
     var container = document.querySelector(
       'div[data-testid="RecentChatsList"]',
