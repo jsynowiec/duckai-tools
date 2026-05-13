@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Duck.ai Quick Prompts
 // @description  Quick prompts picker for Duck.ai with local storage.
-// @version      1.1.3
+// @version      1.1.4
 // @match        https://duck.ai/*
 // @grant        none
 // @run-at       document-end
@@ -109,8 +109,13 @@
     } else if (typeof navigator.platform === "string") {
       platform = navigator.platform;
     }
-
-    return /Mac|iPhone|iPad|iPod/.test(platform);
+    if (/Mac|iPhone|iPad|iPod/.test(platform)) {
+      return true;
+    }
+    // Fallback for Chromium forks that report non-standard platform strings
+    return /Macintosh|Mac OS X/.test(
+      typeof navigator.userAgent === "string" ? navigator.userAgent : "",
+    );
   }
 
   var IS_MAC = isMacPlatform();

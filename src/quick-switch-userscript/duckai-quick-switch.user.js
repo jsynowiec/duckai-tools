@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Duck.ai Quick Switch
 // @description  Spotlight-style quick switcher for recent Duck.ai chats.
-// @version      3.0.1
+// @version      3.0.2
 // @match        https://duck.ai/*
 // @grant        none
 // @run-at       document-end
@@ -94,8 +94,13 @@
     } else if (typeof navigator.platform === "string") {
       platform = navigator.platform;
     }
-
-    return /Mac|iPhone|iPad|iPod/.test(platform);
+    if (/Mac|iPhone|iPad|iPod/.test(platform)) {
+      return true;
+    }
+    // Fallback for Chromium forks that report non-standard platform strings
+    return /Macintosh|Mac OS X/.test(
+      typeof navigator.userAgent === "string" ? navigator.userAgent : "",
+    );
   }
 
   var IS_MAC = isMacPlatform();
