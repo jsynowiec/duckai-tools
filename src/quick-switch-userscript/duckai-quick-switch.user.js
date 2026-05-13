@@ -359,6 +359,71 @@
     return root;
   }
 
+  function openDuckDB() {
+    if (state.dbPromise) {
+      return state.dbPromise;
+    }
+    state.dbPromise = new Promise(function (resolve, reject) {
+      var request = indexedDB.open(DUCK_DB_NAME);
+
+      request.onerror = function () {
+        state.dbPromise = null;
+        reject(request.error);
+      };
+
+      request.onsuccess = function () {
+        var db = request.result;
+        db.onversionchange = function () {
+          db.close();
+          state.dbPromise = null;
+        };
+        resolve(db);
+      };
+    });
+    return state.dbPromise;
+  }
+
+  function loadChatsFromDB() {
+    return openDuckDB().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        if (!db.objectStoreNames.contains(DUCK_STORE_NAME)) {
+          resolve([]);
+          return;
+        }
+
+        var tx = db.transaction(DUCK_STORE_NAME, "readonly");
+        var store = tx.objectStore(DUCK_STORE_NAME);
+        var request = store.getAll();
+
+        request.onsuccess = function () {
+          var records = request.result || [];
+          var entries = [];
+          var i;
+          for (i = 0; i < records.length; i += 1) {
+            var rec = records[i];
+            if (!rec || !rec.title) {
+              continue;
+            }
+            var title = String(rec.title);
+            entries.push({
+              title: title,
+              titleLower: title.toLowerCase(),
+              lastEdit: rec.lastEdit,
+            });
+          }
+          entries.sort(function (a, b) {
+            return new Date(b.lastEdit) - new Date(a.lastEdit);
+          });
+          resolve(entries.slice(0, 50));
+        };
+
+        request.onerror = function () {
+          reject(request.error);
+        };
+      });
+    });
+  }
+
   function collectChats() {
     var container = document.querySelector(
       'div[data-testid="RecentChatsList"]',
