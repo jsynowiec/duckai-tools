@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Duck.ai Quick Prompts
 // @description  Quick prompts picker for Duck.ai with local storage.
-// @version      1.1.2
+// @version      1.1.3
 // @match        https://duck.ai/*
 // @grant        none
 // @run-at       document-end
@@ -1539,19 +1539,20 @@
       return existing.querySelector("button");
     }
 
-    var refBtn = document.querySelector(
-      'button[aria-label="Add photos or PDF files"]',
+    var container = document.querySelector(
+      '[data-testid="duckai-chat-input"] :has(> div > div:nth-of-type(1) > input[type="file"])',
     );
+    if (!container) {
+      return null;
+    }
+
+    var refBtn = container.querySelector("button:nth-of-type(1)");
     if (!refBtn) {
       return null;
     }
 
     var refInner = refBtn.parentElement;
     var refOuter = refInner && refInner.parentElement;
-    var container = refOuter && refOuter.parentElement;
-    if (!container) {
-      return null;
-    }
 
     var outer = document.createElement("div");
     outer.setAttribute(STATE_ATTR, "fake-button");
@@ -1590,7 +1591,7 @@
     if (!anchorObserver) {
       anchorObserver = new MutationObserver(function () {
         var anchor = document.querySelector(
-          'button[aria-label="Add photos or PDF files"]',
+          '[data-testid="duckai-chat-input"] :has(> div > div:nth-of-type(1) > input[type="file"])',
         );
         var fake = document.querySelector("[" + STATE_ATTR + '="fake-button"]');
         if (anchor && !fake) {
