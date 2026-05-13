@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Duck.ai Keyboard Shortcuts
 // @description  Keyboard shortcuts cheat sheet for Duck.ai. Cmd+/ to open.
-// @version      1.0.2
+// @version      1.1.0
 // @match        https://duck.ai/*
 // @grant        none
 // @run-at       document-end
@@ -117,39 +117,74 @@
     return (event.code || "") === "Comma";
   }
 
-  function clickSettingsButton() {
-    var btn = document.querySelector('button[data-testid="settings-button"]');
-    if (btn) {
-      btn.click();
-      return;
-    }
-
-    // The settings button is rendered dynamically inside a collapsible sidebar
-    // section. Expand it first if it is currently collapsed.
-    var expandBtn = document.querySelector(
-      'section[data-testid="duckai-sidebar"] > div:last-child > div:last-child > button',
+  function isSidebarExpanded() {
+    var sidebar = document.querySelector(
+      'section[data-testid="duckai-sidebar"]',
     );
-    if (!expandBtn) {
-      console.warn("[duckai-kb-shortcuts] settings expand button not found");
-      return;
+    if (!sidebar) {
+      return false;
     }
-    if (expandBtn.getAttribute("aria-expanded") !== "false") {
-      console.warn(
-        "[duckai-kb-shortcuts] settings expand button already expanded but settings button not found",
-      );
-      return;
-    }
+    return sidebar.offsetWidth > 100;
+  }
 
-    expandBtn.click();
+  function dispatchSidebarToggle() {
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "s",
+        code: "KeyS",
+        bubbles: true,
+        cancelable: true,
+        metaKey: IS_MAC,
+        ctrlKey: !IS_MAC,
+        shiftKey: true,
+      }),
+    );
+  }
 
-    setTimeout(function () {
-      var settingsBtn = document.querySelector(
-        'button[data-testid="settings-button"]',
-      );
-      if (settingsBtn) {
-        settingsBtn.click();
+  function clickSettingsButton() {
+    function doClick() {
+      var btn = document.querySelector('button[data-testid="settings-button"]');
+      if (btn) {
+        btn.click();
+        return;
       }
-    }, 150);
+
+      // The settings button is rendered dynamically inside a collapsible sidebar
+      // section. Expand it first if it is currently collapsed.
+      var expandBtn = document.querySelector(
+        'section[data-testid="duckai-sidebar"] > div:last-child > div:last-child > button',
+      );
+      if (!expandBtn) {
+        console.warn("[duckai-kb-shortcuts] settings expand button not found");
+        return;
+      }
+      if (expandBtn.getAttribute("aria-expanded") !== "false") {
+        console.warn(
+          "[duckai-kb-shortcuts] settings expand button already expanded but settings button not found",
+        );
+        return;
+      }
+
+      expandBtn.click();
+
+      setTimeout(function () {
+        var settingsBtn = document.querySelector(
+          'button[data-testid="settings-button"]',
+        );
+        if (settingsBtn) {
+          settingsBtn.click();
+        }
+      }, 150);
+    }
+
+    // 150ms for the outer sidebar animation; doClick may add another 150ms
+    // for the inner settings-section accordion — both delays are necessary.
+    if (!isSidebarExpanded()) {
+      dispatchSidebarToggle();
+      setTimeout(doClick, 150);
+    } else {
+      doClick();
+    }
   }
 
   function renderKeyBadgesHtml(keys) {
