@@ -38,6 +38,5 @@ Make sure the extension is allowed to run on `duck.ai`; otherwise the shortcut w
 
 ## Limitations
 
-- Only searches chats currently rendered inside the Duck.ai recent chats sidebar.
-- It does not search pinned chats.
 - It does only match the chat titles (fuzzy).
+- If multiple chats share the same title, it cannot reliably distinguish them when handing control back to the Duck.ai page, so the wrong chat may open.
