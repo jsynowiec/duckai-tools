@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Duck.ai Quick Switch
 // @description  Spotlight-style quick switcher for recent Duck.ai chats.
-// @version      3.0.2
+// @version      3.1.0
 // @match        https://duck.ai/*
 // @grant        none
 // @run-at       document-end
@@ -17,6 +17,8 @@
   // -2 distinguishes "new-chat highlighted" from "nothing highlighted" (-1) and any real index (>= 0)
   var NEW_CHAT_VIRTUAL_INDEX = -2;
   var RECENT_CHATS_LIMIT = 5;
+  var SIDEBAR_COUNT_REFRESH_DEBOUNCE_MS = 100;
+  var SIDEBAR_COUNT_REFRESH_COOLDOWN_MS = 1000;
   var DUCK_DB_NAME = "savedAIChatData";
   var DUCK_STORE_NAME = "saved-chats";
 
@@ -81,6 +83,16 @@
   state.empty = null;
   state.count = null;
   state.dbPromise = state.dbPromise || null;
+  state.sidebarListObserver = state.sidebarListObserver || null;
+  state.sidebarRootObserver = state.sidebarRootObserver || null;
+  state.sidebarObservedList = state.sidebarObservedList || null;
+  state.sidebarChatCount =
+    typeof state.sidebarChatCount === "number" ? state.sidebarChatCount : 0;
+  state.sidebarChatCountKnown = state.sidebarChatCountKnown === true;
+  state.sidebarCountRefreshInFlight = false;
+  state.sidebarCountRefreshQueued = false;
+  state.sidebarCountRefreshTimer = state.sidebarCountRefreshTimer || null;
+  state.sidebarCountLastRefreshAt = state.sidebarCountLastRefreshAt || 0;
   window[GLOBAL_KEY] = state;
 
   function isMacPlatform() {
@@ -198,6 +210,9 @@
       "  font-size: 12px;",
       "  color: var(--duckai-tools-text-faint, #94a3b8);",
       "}",
+      "#" + ROOT_ID + " [" + STATE_ATTR + '="count"][hidden] {',
+      "  display: none;",
+      "}",
       "#" + ROOT_ID + " [" + STATE_ATTR + '="list"] {',
       "  display: flex;",
       "  flex-direction: column;",
@@ -286,7 +301,7 @@
         STATE_ATTR +
         '="close" type="button" aria-label="Close quick switcher">X</button>',
       "  </div>",
-      "  <div " + STATE_ATTR + '="count"></div>',
+      "  <div " + STATE_ATTR + '="count" hidden></div>',
       "  <div " + STATE_ATTR + '="body">',
       "    <div " +
         STATE_ATTR +
@@ -433,6 +448,40 @@
             return new Date(b.lastEdit) - new Date(a.lastEdit);
           });
           resolve(entries.slice(0, 50));
+        };
+
+        request.onerror = function () {
+          reject(request.error);
+        };
+      });
+    });
+  }
+
+  function countUnpinnedChatsFromDB() {
+    return openDuckDB().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        if (!db.objectStoreNames.contains(DUCK_STORE_NAME)) {
+          resolve(0);
+          return;
+        }
+
+        var tx = db.transaction(DUCK_STORE_NAME, "readonly");
+        var store = tx.objectStore(DUCK_STORE_NAME);
+        var request = store.openCursor();
+        var count = 0;
+
+        request.onsuccess = function () {
+          var cursor = request.result;
+          if (!cursor) {
+            resolve(count);
+            return;
+          }
+
+          var rec = cursor.value;
+          if (rec && rec.pinned !== true) {
+            count += 1;
+          }
+          cursor.continue();
         };
 
         request.onerror = function () {
@@ -657,6 +706,7 @@
 
     state.list.innerHTML = "";
     state.count.textContent = "";
+    state.count.hidden = true;
     state.empty.hidden = true;
 
     var fragment = document.createDocumentFragment();
@@ -724,6 +774,7 @@
           state.results.length +
           (state.results.length === 1 ? " match" : " matches");
       }
+      state.count.hidden = state.count.textContent === "";
 
       var ri;
       for (ri = 0; ri < state.results.length; ri += 1) {
@@ -794,12 +845,200 @@
     return document.querySelector('section[data-testid="duckai-sidebar"]');
   }
 
+  function getRecentChatsListElement() {
+    return document.querySelector('[data-testid="RecentChatsList"]');
+  }
+
+  function getRecentChatsHeadingElement() {
+    return document.querySelector(
+      'div:has(+ [data-testid="RecentChatsList"]) p',
+    );
+  }
+
+  function removeSidebarCountSuffix() {
+    var heading = getRecentChatsHeadingElement();
+    if (!heading) {
+      return;
+    }
+
+    var suffix = heading.querySelector("[" + STATE_ATTR + '="sidebar-count"]');
+    if (suffix) {
+      suffix.remove();
+    }
+  }
+
+  function renderSidebarCountSuffix(count) {
+    var heading = getRecentChatsHeadingElement();
+    if (!heading) {
+      return;
+    }
+
+    var countText = " (" + count + ")";
+    var suffix = heading.querySelector("[" + STATE_ATTR + '="sidebar-count"]');
+    if (!suffix) {
+      suffix = document.createElement("span");
+      suffix.setAttribute(STATE_ATTR, "sidebar-count");
+      heading.appendChild(suffix);
+    }
+
+    if (suffix.textContent !== countText) {
+      suffix.textContent = countText;
+    }
+  }
+
+  function syncSidebarChatCountDom() {
+    if (
+      !isSidebarExpanded() ||
+      !getRecentChatsListElement() ||
+      !getRecentChatsHeadingElement() ||
+      !state.sidebarChatCountKnown
+    ) {
+      removeSidebarCountSuffix();
+      return;
+    }
+
+    renderSidebarCountSuffix(state.sidebarChatCount);
+  }
+
   function isSidebarExpanded() {
     var sidebar = getSidebarElement();
     if (!sidebar) {
       return false;
     }
     return sidebar.offsetWidth > 100;
+  }
+
+  function disconnectSidebarListObserver() {
+    if (state.sidebarListObserver) {
+      state.sidebarListObserver.disconnect();
+      state.sidebarListObserver = null;
+    }
+    state.sidebarObservedList = null;
+  }
+
+  function clearSidebarCountRefreshTimer() {
+    if (state.sidebarCountRefreshTimer) {
+      clearTimeout(state.sidebarCountRefreshTimer);
+      state.sidebarCountRefreshTimer = null;
+    }
+  }
+
+  function refreshSidebarChatCountNow() {
+    if (!isSidebarExpanded()) {
+      state.sidebarCountRefreshQueued = false;
+      clearSidebarCountRefreshTimer();
+      return;
+    }
+
+    if (!getRecentChatsListElement() || !getRecentChatsHeadingElement()) {
+      removeSidebarCountSuffix();
+      state.sidebarCountRefreshQueued = false;
+      clearSidebarCountRefreshTimer();
+      return;
+    }
+
+    if (state.sidebarCountRefreshInFlight) {
+      state.sidebarCountRefreshQueued = true;
+      return;
+    }
+
+    state.sidebarCountRefreshInFlight = true;
+    countUnpinnedChatsFromDB()
+      .then(function (count) {
+        state.sidebarChatCount = count;
+        state.sidebarChatCountKnown = true;
+
+        if (!isSidebarExpanded()) {
+          return;
+        }
+
+        if (!getRecentChatsListElement() || !getRecentChatsHeadingElement()) {
+          removeSidebarCountSuffix();
+          return;
+        }
+
+        renderSidebarCountSuffix(state.sidebarChatCount);
+      })
+      .catch(function () {
+        if (!state.sidebarChatCountKnown) {
+          removeSidebarCountSuffix();
+        }
+      })
+      .finally(function () {
+        state.sidebarCountRefreshInFlight = false;
+        state.sidebarCountLastRefreshAt = Date.now();
+        if (state.sidebarCountRefreshQueued) {
+          state.sidebarCountRefreshQueued = false;
+          scheduleSidebarChatCountRefresh();
+        }
+      });
+  }
+
+  function scheduleSidebarChatCountRefresh() {
+    if (!isSidebarExpanded()) {
+      state.sidebarCountRefreshQueued = false;
+      clearSidebarCountRefreshTimer();
+      return;
+    }
+
+    if (!getRecentChatsListElement() || !getRecentChatsHeadingElement()) {
+      syncSidebarChatCountDom();
+      state.sidebarCountRefreshQueued = false;
+      clearSidebarCountRefreshTimer();
+      return;
+    }
+
+    if (state.sidebarCountRefreshInFlight) {
+      state.sidebarCountRefreshQueued = true;
+      return;
+    }
+
+    var remainingCooldown = Math.max(
+      0,
+      SIDEBAR_COUNT_REFRESH_COOLDOWN_MS -
+        (Date.now() - state.sidebarCountLastRefreshAt),
+    );
+    var delay = Math.max(SIDEBAR_COUNT_REFRESH_DEBOUNCE_MS, remainingCooldown);
+
+    clearSidebarCountRefreshTimer();
+    state.sidebarCountRefreshTimer = setTimeout(function () {
+      state.sidebarCountRefreshTimer = null;
+      refreshSidebarChatCountNow();
+    }, delay);
+  }
+
+  function bindSidebarListObserver(list) {
+    if (state.sidebarObservedList === list && state.sidebarListObserver) {
+      return;
+    }
+
+    disconnectSidebarListObserver();
+    state.sidebarObservedList = list;
+    state.sidebarListObserver = new MutationObserver(function () {
+      syncSidebarChatCountDom();
+      scheduleSidebarChatCountRefresh();
+    });
+    state.sidebarListObserver.observe(list, { childList: true, subtree: true });
+    syncSidebarChatCountDom();
+    if (!state.sidebarChatCountKnown) {
+      scheduleSidebarChatCountRefresh();
+    }
+  }
+
+  function ensureSidebarChatCountObserverBinding() {
+    var list = getRecentChatsListElement();
+
+    if (!isSidebarExpanded() || !list) {
+      disconnectSidebarListObserver();
+      return;
+    }
+
+    bindSidebarListObserver(list);
+  }
+
+  function syncSidebarChatCountObserver() {
+    ensureSidebarChatCountObserverBinding();
+    syncSidebarChatCountDom();
   }
 
   function dispatchSidebarToggle() {
@@ -945,6 +1184,7 @@
     if (state.isOpen) {
       return;
     }
+    syncSidebarChatCountObserver();
     state.previousFocus = document.activeElement;
     ensureRoot();
     state.chatEntries = [];
@@ -1112,6 +1352,21 @@
     return state.isOpen;
   }
 
+  function initSidebarChatCount() {
+    syncSidebarChatCountObserver();
+    scheduleSidebarChatCountRefresh();
+
+    if (!state.sidebarRootObserver) {
+      state.sidebarRootObserver = new MutationObserver(function () {
+        ensureSidebarChatCountObserverBinding();
+      });
+      state.sidebarRootObserver.observe(document.body, {
+        childList: true,
+        subtree: true,
+      });
+    }
+  }
+
   mediator.register({
     name: "quick-switch",
     shortcutCheck: checkQuickSwitchShortcut,
@@ -1137,4 +1392,10 @@
     },
     true,
   );
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initSidebarChatCount);
+  } else {
+    initSidebarChatCount();
+  }
 })();
