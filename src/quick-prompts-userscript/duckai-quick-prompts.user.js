@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Duck.ai Quick Prompts
 // @description  Quick prompts picker for Duck.ai with local storage.
-// @version      1.1.5
+// @version      1.2.0
 // @match        https://duck.ai/*
 // @grant        none
 // @run-at       document-end
@@ -29,7 +29,21 @@
     mediator = {
       _registry: [],
       register: function (config) {
+        if (!config || !config.id || !config.label || !config.shortcut) {
+          throw new Error(
+            "[duckai-tools-mediator] register requires id, label, and shortcut",
+          );
+        }
         this._registry.push(config);
+      },
+      getShortcuts: function () {
+        return this._registry.map(function (reg) {
+          return {
+            id: reg.id,
+            label: reg.label,
+            shortcut: reg.shortcut.slice(),
+          };
+        });
       },
       handleShortcut: function (event) {
         if (event.__duckaiToolsHandled__) {
@@ -1530,6 +1544,9 @@
 
   mediator.register({
     name: "quick-prompts",
+    id: "quick-prompts",
+    label: "Quick Prompts",
+    shortcut: ["meta", "shift", "K"],
     shortcutCheck: checkShortcut,
     open: function () {
       openOverlay();

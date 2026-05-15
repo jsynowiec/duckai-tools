@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Duck.ai Quick Switch
 // @description  Spotlight-style quick switcher for recent Duck.ai chats.
-// @version      3.1.0
+// @version      3.2.0
 // @match        https://duck.ai/*
 // @grant        none
 // @run-at       document-end
@@ -31,7 +31,21 @@
     mediator = {
       _registry: [],
       register: function (config) {
+        if (!config || !config.id || !config.label || !config.shortcut) {
+          throw new Error(
+            "[duckai-tools-mediator] register requires id, label, and shortcut",
+          );
+        }
         this._registry.push(config);
+      },
+      getShortcuts: function () {
+        return this._registry.map(function (reg) {
+          return {
+            id: reg.id,
+            label: reg.label,
+            shortcut: reg.shortcut.slice(),
+          };
+        });
       },
       handleShortcut: function (event) {
         if (event.__duckaiToolsHandled__) {
@@ -1369,6 +1383,9 @@
 
   mediator.register({
     name: "quick-switch",
+    id: "quick-search",
+    label: "Quick Search",
+    shortcut: ["meta", "K"],
     shortcutCheck: checkQuickSwitchShortcut,
     open: function () {
       openSwitcher();

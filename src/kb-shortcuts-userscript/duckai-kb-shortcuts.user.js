@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Duck.ai Keyboard Shortcuts
 // @description  Keyboard shortcuts cheat sheet for Duck.ai. Cmd+/ to open.
-// @version      1.1.0
+// @version      2.0.0
 // @match        https://duck.ai/*
 // @grant        none
 // @run-at       document-end
@@ -24,7 +24,21 @@
     mediator = {
       _registry: [],
       register: function (config) {
+        if (!config || !config.id || !config.label || !config.shortcut) {
+          throw new Error(
+            "[duckai-tools-mediator] register requires id, label, and shortcut",
+          );
+        }
         this._registry.push(config);
+      },
+      getShortcuts: function () {
+        return this._registry.map(function (reg) {
+          return {
+            id: reg.id,
+            label: reg.label,
+            shortcut: reg.shortcut.slice(),
+          };
+        });
       },
       handleShortcut: function (event) {
         if (event.__duckaiToolsHandled__) {
@@ -225,9 +239,6 @@
   }
 
   function buildSectionsHtml() {
-    var hasQuickSwitch = !!window.__duckaiToolsQuickSwitchState__;
-    var hasQuickPrompts = !!window.__duckaiToolsQuickPromptsState__;
-
     var generalItems = [
       { label: "New Chat", keys: ["meta", "shift", "O"] },
       { label: "New Image", keys: ["meta", "shift", "I"] },
@@ -237,28 +248,42 @@
     var chatItems = [
       { label: "Copy Chat To Clipboard", keys: ["meta", "shift", "C"] },
       { label: "Delete Active Chat", keys: ["meta", "shift", "E"] },
+      { label: "Change Model", keys: ["meta", "shift", "M"] },
     ];
 
-    var customItems = [];
-    if (hasQuickSwitch) {
-      customItems.push({ label: "Quick Search", keys: ["meta", "K"] });
+    var shortcutEntries =
+      mediator && typeof mediator.getShortcuts === "function"
+        ? mediator.getShortcuts()
+        : [];
+    var toolsOrder = [
+      "quick-search",
+      "quick-prompts",
+      "settings",
+      "keyboard-shortcuts",
+    ];
+    var orderLookup = {};
+    var i;
+    for (i = 0; i < toolsOrder.length; i += 1) {
+      orderLookup[toolsOrder[i]] = i;
     }
-    if (hasQuickPrompts) {
-      customItems.push({
-        label: "Quick Prompts",
-        keys: ["meta", "shift", "K"],
+    var customItems = shortcutEntries
+      .filter(function (entry) {
+        return typeof orderLookup[entry.id] !== "undefined";
+      })
+      .sort(function (a, b) {
+        return orderLookup[a.id] - orderLookup[b.id];
+      })
+      .map(function (entry) {
+        return {
+          label: entry.label,
+          keys: entry.shortcut,
+        };
       });
-    }
-    customItems.push({
-      label: "Duck.ai Settings",
-      keys: ["meta", "shift", ","],
-    });
-    customItems.push({ label: "Keyboard Shortcuts", keys: ["meta", "/"] });
 
     var html = "";
     html += buildSectionHtml("General", generalItems);
     html += buildSectionHtml("In chats", chatItems);
-    html += buildSectionHtml("Custom", customItems);
+    html += buildSectionHtml("Duck.ai Tools", customItems);
     return html;
   }
 
@@ -351,8 +376,16 @@
       "  align-items: center;",
       "  justify-content: space-between;",
       "  padding: 12px 0;",
-      "  border-top: 1px solid var(--duckai-tools-divider, rgba(0, 0, 0, 0.08));",
       "  font-size: 14px;",
+      "}",
+      "#" +
+        ROOT_ID +
+        " [" +
+        STATE_ATTR +
+        '="row"] + [' +
+        STATE_ATTR +
+        '="row"] {',
+      "  border-top: 1px solid var(--duckai-tools-divider, rgba(0, 0, 0, 0.08));",
       "}",
       "#" + ROOT_ID + " [" + STATE_ATTR + '="row-label"] {',
       "  color: var(--duckai-tools-text, #0f172a);",
@@ -523,6 +556,9 @@
 
   mediator.register({
     name: "kb-shortcuts",
+    id: "keyboard-shortcuts",
+    label: "Keyboard Shortcuts",
+    shortcut: ["meta", "/"],
     shortcutCheck: checkKbShortcutsShortcut,
     open: function () {
       openModal();
@@ -537,6 +573,9 @@
 
   mediator.register({
     name: "settings",
+    id: "settings",
+    label: "Duck.ai Settings",
+    shortcut: ["meta", "shift", ","],
     shortcutCheck: checkSettingsShortcut,
     open: function () {
       clickSettingsButton();

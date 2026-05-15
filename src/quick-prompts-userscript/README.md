@@ -55,7 +55,7 @@ Make sure the extension is allowed to run on `duck.ai`; otherwise the shortcut w
 
 | Shortcut | Action |
 |----------|--------|
-| `Cmd/Ctrl + Shift + P` | Open prompt picker |
+| `Cmd/Ctrl + Shift + K` | Open prompt picker |
 | `Arrow Up/Down` | Navigate prompts |
 | `Enter` | Insert highlighted prompt / Add new |
 | `Escape` | Close picker / Cancel |

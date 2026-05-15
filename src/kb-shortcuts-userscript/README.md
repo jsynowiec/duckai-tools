@@ -14,7 +14,14 @@ Make sure the extension is allowed to run on `duck.ai`; otherwise the shortcuts 
 
 - **Cheat sheet**: `Cmd+/` (macOS) / `Ctrl+/` (Windows/Linux) opens a modal listing Duck.ai shortcuts
 - **Settings shortcut**: `Cmd+Shift+,` (macOS) / `Ctrl+Shift+,` (Windows/Linux) opens the Duck.ai settings panel
-- **Sibling awareness**: Quick Search and Quick Prompts entries appear in the cheat sheet only if those userscripts are also active
+- **Sibling awareness**: Duck.ai Tools shortcuts are discovered at runtime from active sibling userscripts
+
+## Compatibility
+
+`v2.0.0` is not backward compatible with earlier versions of sibling userscripts.
+
+- Runtime shortcut discovery requires `Quick Switch v3.2.0+`
+- Runtime shortcut discovery requires `Quick Prompts v1.2.0+`
 
 ## Install
 
@@ -36,9 +43,6 @@ Make sure the extension is allowed to run on `duck.ai`; otherwise the shortcuts 
 
 ## Keyboard Shortcuts
 
-> [!INFO]
-> Shortcuts are not discovered at runtime. Instead, they are hardcoded in the script.
-
 ### Duck.AI General
 
 | Shortcut | Action |
@@ -53,17 +57,16 @@ Make sure the extension is allowed to run on `duck.ai`; otherwise the shortcuts 
 |----------|--------|
 | `Cmd/Ctrl + Shift + C` | Copy Chat To Clipboard |
 | `Cmd/Ctrl + Shift + E` | Delete Active Chat |
+| `Cmd/Ctrl + Shift + M` | Change Model |
 
-### Custom (this script)
+### Duck.ai Tools
 
 | Shortcut | Action |
 |----------|--------|
 | `Cmd/Ctrl + /` | Open keyboard shortcuts cheat sheet |
 | `Cmd/Ctrl + Shift + ,` | Open Duck.ai settings |
 
-### Custom (sibling userscripts)
-
 | Shortcut | Action | Requires |
 |----------|--------|----------|
 | `Cmd/Ctrl + K` | Quick Search | [Quick Switch](../quick-switch-userscript/README.md) |
-| `Cmd/Ctrl + Shift + P` | Quick Prompts | [Quick Prompts](../quick-prompts-userscript/README.md) |
+| `Cmd/Ctrl + Shift + K` | Quick Prompts | [Quick Prompts](../quick-prompts-userscript/README.md) |
