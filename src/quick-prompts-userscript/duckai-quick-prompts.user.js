@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Duck.ai Quick Prompts
 // @description  Quick prompts picker for Duck.ai with local storage.
-// @version      1.1.4
+// @version      1.1.5
 // @match        https://duck.ai/*
 // @grant        none
 // @run-at       document-end
@@ -14,6 +14,8 @@
   var ROOT_ID = "duckai-tools-quick-prompts-root";
   var STYLE_TAG_ID = "duckai-tools-quick-prompts-style";
   var STATE_ATTR = "data-duckai-tools-quick-prompts";
+  // -2 distinguishes "new-prompt highlighted" from "nothing highlighted" (-1) and any real index (>= 0)
+  var NEW_PROMPT_VIRTUAL_INDEX = -2;
   var DB_NAME = "duckaiToolsQuickPrompts";
   var DB_VERSION = 1;
   var STORE_NAME = "prompts";
@@ -925,7 +927,7 @@
     if (state.searchQuery) {
       state.highlightedIndex = state.filteredPrompts.length > 0 ? 0 : -1;
     } else {
-      state.highlightedIndex = -1;
+      state.highlightedIndex = NEW_PROMPT_VIRTUAL_INDEX;
     }
 
     renderSelectView();
@@ -953,7 +955,7 @@
     addRow.setAttribute("role", "option");
     addRow.setAttribute(
       "aria-selected",
-      state.highlightedIndex === -1 ? "true" : "false",
+      state.highlightedIndex === NEW_PROMPT_VIRTUAL_INDEX ? "true" : "false",
     );
     addRow.innerHTML =
       '<svg fill="none" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">' +
@@ -1275,12 +1277,22 @@
   }
 
   function moveHighlight(direction) {
-    // virtualTotal includes add-row (+1), mapped so virtualIndex 0 = add-row (-1)
     var total = state.filteredPrompts.length;
     var virtualTotal = total + 1;
-    var virtualIndex = state.highlightedIndex + 1;
-    virtualIndex = (virtualIndex + direction + virtualTotal) % virtualTotal;
-    state.highlightedIndex = virtualIndex - 1;
+    var currentVirtual;
+
+    if (state.highlightedIndex === NEW_PROMPT_VIRTUAL_INDEX) {
+      currentVirtual = 0;
+    } else if (state.highlightedIndex >= 0) {
+      currentVirtual = state.highlightedIndex + 1;
+    } else {
+      currentVirtual = direction > 0 ? -1 : virtualTotal;
+    }
+
+    var nextVirtual =
+      (currentVirtual + direction + virtualTotal) % virtualTotal;
+    state.highlightedIndex =
+      nextVirtual === 0 ? NEW_PROMPT_VIRTUAL_INDEX : nextVirtual - 1;
 
     renderSelectView();
     scrollHighlightedIntoView(direction);
@@ -1294,7 +1306,7 @@
     var container = state.list.parentElement;
     var el;
 
-    if (state.highlightedIndex < 0) {
+    if (state.highlightedIndex === NEW_PROMPT_VIRTUAL_INDEX) {
       el = state.list.querySelector("[" + STATE_ATTR + '="add-row"]');
     } else {
       var items = state.list.querySelectorAll("[" + STATE_ATTR + '="item"]');
@@ -1403,7 +1415,10 @@
       if (key === "Enter") {
         event.preventDefault();
         event.stopPropagation();
-        if (state.highlightedIndex === -1) {
+        if (
+          state.highlightedIndex === NEW_PROMPT_VIRTUAL_INDEX ||
+          state.highlightedIndex < 0
+        ) {
           startCreatePrompt();
         } else {
           insertPrompt(state.highlightedIndex);
@@ -1427,7 +1442,7 @@
     state.isOpen = true;
     state.mode = "select";
     state.searchQuery = "";
-    state.highlightedIndex = -1;
+    state.highlightedIndex = NEW_PROMPT_VIRTUAL_INDEX;
     state.input.value = "";
     state.input.disabled = false;
 
