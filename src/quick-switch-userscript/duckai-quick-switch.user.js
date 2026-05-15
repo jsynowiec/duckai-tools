@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Duck.ai Quick Switch
 // @description  Spotlight-style quick switcher for recent Duck.ai chats.
-// @version      3.2.0
+// @version      3.2.1
 // @match        https://duck.ai/*
 // @grant        none
 // @run-at       document-end
@@ -1382,7 +1382,6 @@
   }
 
   mediator.register({
-    name: "quick-switch",
     id: "quick-search",
     label: "Quick Search",
     shortcut: ["meta", "K"],

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Duck.ai Keyboard Shortcuts
 // @description  Keyboard shortcuts cheat sheet for Duck.ai. Cmd+/ to open.
-// @version      2.0.0
+// @version      2.0.1
 // @match        https://duck.ai/*
 // @grant        none
 // @run-at       document-end
@@ -555,7 +555,6 @@
   }
 
   mediator.register({
-    name: "kb-shortcuts",
     id: "keyboard-shortcuts",
     label: "Keyboard Shortcuts",
     shortcut: ["meta", "/"],
@@ -572,7 +571,6 @@
   });
 
   mediator.register({
-    name: "settings",
     id: "settings",
     label: "Duck.ai Settings",
     shortcut: ["meta", "shift", ","],

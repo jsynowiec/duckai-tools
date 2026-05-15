@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Duck.ai Quick Prompts
 // @description  Quick prompts picker for Duck.ai with local storage.
-// @version      1.2.0
+// @version      1.2.1
 // @match        https://duck.ai/*
 // @grant        none
 // @run-at       document-end
@@ -112,6 +112,7 @@
   state.discardConfirmBtn = null;
   state.discardCancelBtn = null;
   state.dbPromise = state.dbPromise || null;
+  state.anchorObserver = state.anchorObserver || null;
   window[GLOBAL_KEY] = state;
 
   function isMacPlatform() {
@@ -1543,7 +1544,6 @@
   }
 
   mediator.register({
-    name: "quick-prompts",
     id: "quick-prompts",
     label: "Quick Prompts",
     shortcut: ["meta", "shift", "K"],
@@ -1620,13 +1620,11 @@
     return btn;
   }
 
-  var anchorObserver = null;
-
   function initFakeButton() {
     ensureFakeButton();
 
-    if (!anchorObserver) {
-      anchorObserver = new MutationObserver(function () {
+    if (!state.anchorObserver) {
+      state.anchorObserver = new MutationObserver(function () {
         var anchor = document.querySelector(
           '[data-testid="duckai-chat-input"] :has(> div > div:nth-of-type(1) > input[type="file"])',
         );
@@ -1635,7 +1633,10 @@
           ensureFakeButton();
         }
       });
-      anchorObserver.observe(document.body, { childList: true, subtree: true });
+      state.anchorObserver.observe(document.body, {
+        childList: true,
+        subtree: true,
+      });
     }
   }
 
